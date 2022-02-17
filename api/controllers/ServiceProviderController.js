@@ -1,0 +1,399 @@
+const connection = require("../database/connection");
+const validator = require("validator");
+const bcrypt = require("bcrypt");
+
+const GetAllServiceProviders = async (req, res) => {
+  try {
+    const [rows, _] = await connection.execute(
+      "SELECT * FROM service_provider"
+    );
+    return res.status(200).json({ rows });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
+/**
+ * Adds service provider to it's designated table and also
+ * adds them to Login table with service provider id.
+ * @param {*} req
+ * @param {*} res
+ * @returns 201 - created
+ */
+const CreateNewServiceProvider = async (req, res) => {
+  const {
+    firstName,
+    lastName,
+    storeName,
+    email,
+    password,
+    confirmPassword,
+    street, // set as optional
+    city,
+    province, // set as optional
+    country,
+    phoneNumber,
+  } = req.body;
+
+  if (
+    !firstName ||
+    !lastName ||
+    !storeName ||
+    !email ||
+    !password ||
+    !confirmPassword ||
+    !city ||
+    !country ||
+    !phoneNumber
+  ) {
+    return res
+      .status(412)
+      .json({ message: "Please provide all required fields" });
+  }
+
+  // check if both passwords are same
+  if (password !== confirmPassword) {
+    return res.status(412).json({ message: "Passwords don't match" });
+  }
+
+  try {
+    // check if the email is valid
+    const isValidEmail = validator.isEmail(email);
+    if (!isValidEmail) {
+      return res.status(412).json({ message: "Please provide a valid email" });
+    }
+
+    // check for duplicate email
+    const [duplicateEmailRows] = await connection.execute(
+      "SELECT * FROM service_provider WHERE email = ?",
+      [email]
+    );
+    if (duplicateEmailRows.length !== 0) {
+      return res.status(412).json({ message: "Email already exists!" });
+    }
+
+    const hashSalt = bcrypt.genSaltSync(Number(process.env.HASH_ROUNDS));
+    const passwordHash = bcrypt.hashSync(password, hashSalt);
+
+    const [serviceProviderAddressRow] = await connection.execute(
+      "INSERT INTO address (street, city, country, province) VALUES (?, ?, ?, ?)",
+      [street, city, country, province]
+    );
+    // const [addressRows] = await connection.execute(
+    //   "SELECT * FROM address ORDER BY address_id DESC LIMIT 1"
+    // );
+    // const addressId = addressRows[0].address_id;
+    const addressId = serviceProviderAddressRow.insertId;
+    const [serviceProviderRows] = await connection.execute(
+      "INSERT INTO service_provider (first_name, last_name, store_name, email, password, phone_number, fk_address_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [
+        firstName,
+        lastName,
+        storeName,
+        email,
+        passwordHash,
+        phoneNumber,
+        addressId,
+      ]
+    );
+    // const [serviceProviderRow] = await connection.execute(
+    //   "SELECT * FROM service_provider ORDER BY service_provider_id DESC LIMIT 1"
+    // );
+    const savedServiceProviderId = serviceProviderRows.insertId;
+    await connection.execute(
+      "INSERT INTO login (login_email, login_password, service_provider_id, customer_id, blocked) VALUES (?, ?, ?, ?, ?)",
+      [email, passwordHash, savedServiceProviderId, null, String(0)]
+    );
+    return res
+      .status(201)
+      .json({ serviceProviderRows, message: "Service provider created" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
+const AddNewService = async (req, res) => {
+  /**
+   * TODO: on req.files we have files that are stored for this new service. save those file data in photos table along with PK of that service.
+   */
+  const {
+    serviceName,
+    serviceType, // data type and allowed values not decided yet.
+    serviceUnitPrice,
+    status,
+    discount,
+    description,
+  } = req.body;
+
+  // This will be allocated on req.body by authentication middleware
+  const { eventierUserEmail } = req.body;
+
+  if (
+    !serviceName ||
+    !serviceType ||
+    !serviceUnitPrice ||
+    !status ||
+    !String(discount) ||
+    !description
+  ) {
+    return res
+      .status(412)
+      .json({ message: "Please provide all required fields" });
+  }
+  try {
+    const [serviceProviderRow] = await connection.execute(
+      "SELECT * FROM service_provider WHERE email = ?",
+      [eventierUserEmail]
+    );
+    const serviceProviderId = serviceProviderRow[0].service_provider_id;
+    await connection.execute(
+      "INSERT INTO services (service_name, service_type, unit_price, status, discount, description, service_provider_id, blocked) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [
+        serviceName,
+        serviceType,
+        serviceUnitPrice,
+        status,
+        discount,
+        description,
+        serviceProviderId,
+        String(0), // means un-blocked
+      ]
+    );
+    return res.status(201).json({ message: "Service added Successfully!" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
+/**
+ * If the user provides the type of order they need to fetch, they have to provide
+ * one of the allowed order status types.
+ * 1) in-progress
+ * 2) delivered
+ * 3) accepted
+ * 4) rejected
+ *
+ * If no type query string is passed, all orders are fetched
+ * @param {} req
+ * @param {*} res
+ * @returns 200 - Orders
+ */
+const GetAllOrders = async (req, res) => {
+  const { eventierUserEmail } = req.body;
+  const allowedOrdersType = [
+    "in-progress",
+    "delivered",
+    "accepted",
+    "rejected",
+  ];
+  const { type } = req.query; // ../?type=something
+  if (type) {
+    // if any type was passed, check if it was correct type
+    if (!allowedOrdersType.includes(type)) {
+      return res.status(400).json({ message: "Invalid order type passed!" });
+    }
+  }
+  try {
+    const [serviceProviderRow] = await connection.execute(
+      "SELECT * FROM service_provider WHERE email = ?",
+      [eventierUserEmail]
+    );
+    const serviceProviderId = serviceProviderRow[0].service_provider_id;
+    const queryValuesArray = [serviceProviderId];
+    let query = "SELECT * FROM orders WHERE service_provider_id = ?";
+    if (type) {
+      query = query + " AND status = ?";
+      queryValuesArray.push(type);
+    }
+    const [servicesRows] = await connection.execute(query, queryValuesArray);
+    return res.status(200).json({ servicesRows });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
+const ChangeOrderStatus = async (req, res) => {
+  const { eventierUserEmail } = req.body;
+  const { newStatus, orderId } = req.body;
+
+  if (!newStatus) {
+    return res
+      .status(400)
+      .json({ message: "Please provide all required fields" });
+  }
+
+  try {
+    // get service provider id
+    const [serviceProviderRow] = await connection.execute(
+      "SELECT * FROM service_provider WHERE email = ?",
+      [eventierUserEmail]
+    );
+    const serviceProviderId = serviceProviderRow[0].service_provider_id;
+    const [result] = await connection.execute(
+      "UPDATE orders SET status = ? WHERE service_provider_id = ? AND order_id = ?",
+      [newStatus, serviceProviderId, orderId]
+    );
+    return res
+      .status(200)
+      .json({ message: "Order updated!", queryResult: result });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
+const GetAllServices = async (req, res) => {
+  const { eventierUserEmail } = req.body;
+  try {
+    const [serviceProviderRow] = await connection.execute(
+      "SELECT * FROM service_provider WHERE email = ?",
+      [eventierUserEmail]
+    );
+    const serviceProviderId = serviceProviderRow[0].service_provider_id;
+    const [servicesRows] = await connection.execute(
+      "SELECT * FROM services WHERE service_provider_id = ?",
+      [serviceProviderId]
+    );
+    return res.status(200).json({ servicesRows });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const GetRatingsAndReviews = async (req, res) => {
+  const { eventierUserEmail } = req.body;
+  const { serviceId } = req.body;
+
+  let REVIEWS = {};
+
+  if (!serviceId) {
+    return res
+      .status(400)
+      .json({ message: "Please provide all required fields" });
+  }
+
+  try {
+    const [serviceProviderRow] = await connection.execute(
+      "SELECT * FROM service_provider WHERE email = ?",
+      [eventierUserEmail]
+    );
+    const serviceProviderId = serviceProviderRow[0].service_provider_id;
+    const [serviceRow] = await connection.execute(
+      "SELECT * FROM services WHERE service_id = ?",
+      [serviceId]
+    );
+
+    REVIEWS.serviceName = serviceRow[0].service_name;
+    REVIEWS.serviceType = serviceRow[0].service_type;
+    REVIEWS.serviceStatus = serviceRow[0].status;
+
+    const [reviewsRows] = await connection.execute(
+      "SELECT * FROM reviews WHERE service_provider_id = ? AND service_id = ?",
+      [serviceProviderId, serviceId]
+    );
+
+    if (reviewsRows.length === 0) {
+      return res.status(200).json({ message: "No reviews", REVIEWS: [] });
+    }
+
+    REVIEWS.providingCustomerId = reviewsRows[0].customer_id;
+    REVIEWS.message = reviewsRows[0].review_message;
+    REVIEWS.starRating = reviewsRows[0].star_rating;
+
+    return res.status(200).json({ REVIEWS });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
+const UpdateServiceProviderProfile = async (req, res) => {
+  const { eventierUserEmail } = req.body;
+
+  const {
+    firstName,
+    lastName,
+    storeName,
+    phoneNumber,
+    addressStreet,
+    addressCity,
+    addressCountry,
+    addressProvince,
+  } = req.body;
+
+  if (
+    !firstName ||
+    !lastName ||
+    !storeName ||
+    !phoneNumber ||
+    !addressStreet ||
+    !addressCity ||
+    !addressProvince ||
+    !addressCountry
+  ) {
+    return res
+      .status(400)
+      .json({ message: "Please provide all required fields" });
+  }
+
+  try {
+    const [serviceProviderRow] = await connection.execute(
+      "SELECT * FROM service_provider WHERE email = ?",
+      [eventierUserEmail]
+    );
+    const serviceProviderId = serviceProviderRow[0].service_provider_id;
+    const addressId = serviceProviderRow[0].fk_address_id;
+    await connection.execute(
+      "UPDATE address SET street = ?, city = ?, country = ?, province = ? WHERE address_id = ?",
+      [addressStreet, addressCity, addressCountry, addressProvince, addressId]
+    );
+    await connection.execute(
+      "UPDATE service_provider SET first_name = ?, last_name = ?, store_name = ?, phone_number = ? WHERE service_provider_id = ?",
+      [firstName, lastName, storeName, phoneNumber, serviceProviderId]
+    );
+    return res.status(200).json({ message: "Service provider updated!" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const Logout = async (req, res) => {
+  const { eventierUserEmail } = req.body;
+  try {
+    const [serviceProvidersResult] = await connection.execute(
+      "SELECT * FROM service_provider WHERE email = ?",
+      [eventierUserEmail]
+    );
+    const serviceProviderId = serviceProvidersResult[0].service_provider_id;
+    /**
+     * Delete all the tokens for the user, hence logging them out
+     * of all the logged in devices.
+     * */
+    await connection.execute(
+      "DELETE FROM jwt_token WHERE service_provider_id = ?",
+      [serviceProviderId]
+    );
+    return res.status(200).json({ message: "Logged out of all devices" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
+module.exports = {
+  GetAllServiceProviders,
+  CreateNewServiceProvider,
+  AddNewService,
+  GetAllServiceProviderOrders: GetAllOrders,
+  ChangeOrderStatus,
+  GetAllServices,
+  GetRatingsAndReviews,
+  UpdateServiceProviderProfile,
+  ServiceProviderLogout: Logout,
+};
