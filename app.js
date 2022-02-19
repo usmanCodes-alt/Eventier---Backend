@@ -2,11 +2,16 @@ const express = require("express");
 require("dotenv").config();
 const morgan = require("morgan");
 const cors = require("cors");
+const path = require("path");
 const router = require("./api/routes/routes");
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(
+  "/static",
+  express.static(path.join(__dirname, "images/service-images"))
+);
 app.use(morgan("tiny"));
 app.use(cors());
 app.use(express.json());

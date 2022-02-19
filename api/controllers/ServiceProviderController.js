@@ -115,9 +115,6 @@ const CreateNewServiceProvider = async (req, res) => {
 };
 
 const AddNewService = async (req, res) => {
-  /**
-   * TODO: on req.files we have files that are stored for this new service. save those file data in photos table along with PK of that service.
-   */
   const {
     serviceName,
     serviceType, // data type and allowed values not decided yet.

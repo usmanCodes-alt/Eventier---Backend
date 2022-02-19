@@ -1,8 +1,4 @@
 const express = require("express");
-const multer = require("multer");
-const fs = require("fs");
-const glob = require("glob");
-const path = require("path");
 const router = express.Router();
 
 const {
@@ -35,7 +31,10 @@ const {
   GetCustomers,
   GetServiceProviders,
 } = require("../controllers/AdminController");
-const { AddServiceImage } = require("../controllers/ImagesController");
+const {
+  AddServiceImage,
+  AddServiceProviderProfilePicture,
+} = require("../controllers/ImagesController");
 const { GenericLogin } = require("../controllers/LoginController");
 const authentication = require("../middleware/authentication");
 const {
@@ -44,79 +43,12 @@ const {
   adminOnly,
 } = require("../middleware/allowAccess");
 
-/**
- * Multer setup
- */
-const fileStorageEngine = multer.diskStorage({
-  destination: (req, file, callback) => {
-    if (
-      !fs.existsSync(
-        path.join(
-          __dirname,
-          "../../images/service-images/" + req.body.eventierUserEmail
-        )
-      )
-    ) {
-      console.log("creating directory");
-      fs.mkdirSync(
-        path.join(
-          __dirname,
-          "../../images/service-images/" + req.body.eventierUserEmail
-        )
-      );
-    }
-    callback(
-      null,
-      path.join(
-        __dirname,
-        "../../images/service-images/" + req.body.eventierUserEmail
-      )
-    );
-  },
-  filename: (req, file, callback) => {
-    /**
-     * ! MAKE SURE TO SEND eventierUserEmail AND serviceType FROM THE
-     * ! FRONTEND
-     */
-    let { eventierUserEmail } = req.body;
-    const { serviceType } = req.body;
-    eventierUserEmail = eventierUserEmail.split("@")[0];
-
-    const matches = glob.sync(
-      eventierUserEmail + "--" + serviceType + "--" + "*.*",
-      {
-        cwd: path.join(
-          __dirname,
-          "../../images/service-images/" + req.body.eventierUserEmail
-        ),
-      }
-    );
-    console.log(matches);
-    if (matches.length >= 5) {
-      return callback("Limit exceeded");
-    }
-
-    callback(
-      null,
-      eventierUserEmail + "--" + serviceType + "--" + file.originalname
-    );
-  },
-});
-
-const upload = multer({
-  storage: fileStorageEngine,
-  fileFilter: function (req, file, cb) {
-    const allowedExtensions = /jpeg|jpg|png/;
-    const extensionNameTest = allowedExtensions.test(
-      path.extname(file.originalname).toLocaleLowerCase()
-    );
-    if (extensionNameTest) {
-      return cb(null, true);
-    } else {
-      return cb("Wrong extension", false);
-    }
-  },
-});
+// Multer setups imports
+const {
+  serviceImagesUploadEngine,
+  profilePictureUploadEngine,
+} = require("../utils/multer-setups");
+const { path } = require("express/lib/application");
 
 /**
  * Generic login
@@ -202,8 +134,15 @@ router.post(
   "/service-provider/add-service/upload-image",
   authentication,
   serviceProvidersOnly,
-  upload.single("serviceImage"),
+  serviceImagesUploadEngine.single("serviceImage"),
   AddServiceImage
+);
+router.post(
+  "/service-provider/profile-picture/add",
+  authentication,
+  serviceProvidersOnly,
+  profilePictureUploadEngine.single("sp-profile-picture"),
+  AddServiceProviderProfilePicture
 );
 
 // type (query string) -> in-progress, delivered, accepted, rejected, if none is given fetch all orders
