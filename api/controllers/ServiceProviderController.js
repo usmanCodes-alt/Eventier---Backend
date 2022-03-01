@@ -200,13 +200,16 @@ const GetAllOrders = async (req, res) => {
     );
     const serviceProviderId = serviceProviderRow[0].service_provider_id;
     const queryValuesArray = [serviceProviderId];
-    let query = "SELECT * FROM orders WHERE service_provider_id = ?";
+    let joinQuery = `SELECT customers.first_name AS customer_name, services.service_type AS service_type, orders.order_name AS order_name, orders.payment_status, orders.order_date, orders.status FROM orders INNER JOIN customers ON orders.customer_id = customers.customer_id INNER JOIN services ON orders.service_id = services.service_id WHERE orders.service_provider_id = ?`;
+
+    // let query = "SELECT * FROM orders WHERE service_provider_id = ?";
     if (type) {
-      query = query + " AND status = ?";
+      joinQuery = joinQuery + " AND status = ?";
       queryValuesArray.push(type);
     }
-    const [servicesRows] = await connection.execute(query, queryValuesArray);
-    return res.status(200).json({ servicesRows });
+    const result = await connection.execute(joinQuery, queryValuesArray);
+    const [servicesRows] = result;
+    return res.status(200).json({ serviceProviderOrders: servicesRows });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error!" });
