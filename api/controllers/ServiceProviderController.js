@@ -283,29 +283,40 @@ const GetRatingsAndReviews = async (req, res) => {
       [eventierUserEmail]
     );
     const serviceProviderId = serviceProviderRow[0].service_provider_id;
-    const [serviceRow] = await connection.execute(
-      "SELECT * FROM services WHERE service_id = ?",
-      [serviceId]
-    );
+    const reviewsJoinQuery = `SELECT services.service_name, services.service_type, services.status, reviews.review_message, reviews.star_rating, customers.first_name, customers.last_name
+    FROM reviews
+    INNER JOIN services ON reviews.service_id = services.service_id
+    INNER JOIN customers ON reviews.customer_id = customers.customer_id
+    WHERE reviews.service_provider_id = ? AND reviews.service_id = ?`;
+    const [reviews] = await connection.execute(reviewsJoinQuery, [
+      serviceProviderId,
+      serviceId,
+    ]);
+    // const [serviceRow] = await connection.execute(
+    //   "SELECT * FROM services WHERE service_id = ?",
+    //   [serviceId]
+    // );
 
-    REVIEWS.serviceName = serviceRow[0].service_name;
-    REVIEWS.serviceType = serviceRow[0].service_type;
-    REVIEWS.serviceStatus = serviceRow[0].status;
+    // REVIEWS.serviceName = serviceRow[0].service_name;
+    // REVIEWS.serviceType = serviceRow[0].service_type;
+    // REVIEWS.serviceStatus = serviceRow[0].status;
 
-    const [reviewsRows] = await connection.execute(
-      "SELECT * FROM reviews WHERE service_provider_id = ? AND service_id = ?",
-      [serviceProviderId, serviceId]
-    );
+    // const [reviewsRows] = await connection.execute(
+    //   "SELECT * FROM reviews WHERE service_provider_id = ? AND service_id = ?",
+    //   [serviceProviderId, serviceId]
+    // );
 
-    if (reviewsRows.length === 0) {
+    if (reviews.length === 0) {
       return res.status(200).json({ message: "No reviews", REVIEWS: [] });
     }
 
-    REVIEWS.providingCustomerId = reviewsRows[0].customer_id;
-    REVIEWS.message = reviewsRows[0].review_message;
-    REVIEWS.starRating = reviewsRows[0].star_rating;
+    // REVIEWS.providingCustomerId = reviewsRows[0].customer_id;
+    // REVIEWS.message = reviewsRows[0].review_message;
+    // REVIEWS.starRating = reviewsRows[0].star_rating;
 
-    return res.status(200).json({ REVIEWS });
+    // console.log(reviewsRows);
+
+    return res.status(200).json({ reviews });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error!" });

@@ -48,7 +48,6 @@ const {
   serviceImagesUploadEngine,
   profilePictureUploadEngine,
 } = require("../utils/multer-setups");
-const { path } = require("express/lib/application");
 
 /**
  * Generic login
