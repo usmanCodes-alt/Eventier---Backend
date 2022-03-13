@@ -14,6 +14,35 @@ const GetAllServiceProviders = async (req, res) => {
   }
 };
 
+const GetServiceProviderByEmail = async (req, res) => {
+  try {
+    const { email } = req.params;
+    if (!email || !validator.isEmail(email)) {
+      return res
+        .status(404)
+        .json({ message: "Please provide a valid email address" });
+    }
+    const [eventierUserInformation] = await connection.execute(
+      `SELECT first_name, last_name, email, phone_number, street, city, country, province
+      FROM service_provider
+      INNER JOIN address ON service_provider.fk_address_id = address.address_id
+      WHERE service_provider.email = ?;`,
+      [email]
+    );
+    if (eventierUserInformation.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No service provider registered with this email" });
+    }
+    return res
+      .status(200)
+      .json({ eventierUserInformation: eventierUserInformation[0] });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 /**
  * Adds service provider to it's designated table and also
  * adds them to Login table with service provider id.
@@ -269,8 +298,6 @@ const GetRatingsAndReviews = async (req, res) => {
   const { eventierUserEmail } = req.body;
   const { serviceId } = req.body;
 
-  let REVIEWS = {};
-
   if (!serviceId) {
     return res
       .status(400)
@@ -292,29 +319,10 @@ const GetRatingsAndReviews = async (req, res) => {
       serviceProviderId,
       serviceId,
     ]);
-    // const [serviceRow] = await connection.execute(
-    //   "SELECT * FROM services WHERE service_id = ?",
-    //   [serviceId]
-    // );
-
-    // REVIEWS.serviceName = serviceRow[0].service_name;
-    // REVIEWS.serviceType = serviceRow[0].service_type;
-    // REVIEWS.serviceStatus = serviceRow[0].status;
-
-    // const [reviewsRows] = await connection.execute(
-    //   "SELECT * FROM reviews WHERE service_provider_id = ? AND service_id = ?",
-    //   [serviceProviderId, serviceId]
-    // );
 
     if (reviews.length === 0) {
       return res.status(200).json({ message: "No reviews", REVIEWS: [] });
     }
-
-    // REVIEWS.providingCustomerId = reviewsRows[0].customer_id;
-    // REVIEWS.message = reviewsRows[0].review_message;
-    // REVIEWS.starRating = reviewsRows[0].star_rating;
-
-    // console.log(reviewsRows);
 
     return res.status(200).json({ reviews });
   } catch (error) {
@@ -406,5 +414,6 @@ module.exports = {
   GetAllServices,
   GetRatingsAndReviews,
   UpdateServiceProviderProfile,
+  GetServiceProviderByEmail,
   ServiceProviderLogout: Logout,
 };

@@ -19,6 +19,7 @@ const {
   GetAllServices,
   GetRatingsAndReviews,
   UpdateServiceProviderProfile,
+  GetServiceProviderByEmail,
   ServiceProviderLogout,
 } = require("../controllers/ServiceProviderController");
 const {
@@ -120,6 +121,12 @@ router.delete(
  */
 
 router.get("/service-providers/all", GetAllServiceProviders);
+router.get(
+  "/service-provider/get-by-email/:email",
+  authentication,
+  serviceProvidersOnly,
+  GetServiceProviderByEmail
+);
 router.post("/service-providers/create-new", CreateNewServiceProvider);
 router.post(
   "/service-providers/add-service",
