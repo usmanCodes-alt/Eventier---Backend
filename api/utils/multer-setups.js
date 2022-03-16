@@ -37,10 +37,6 @@ const serviceImageFileStorageEngine = multer.diskStorage({
     );
   },
   filename: (req, file, callback) => {
-    /**
-     * ! MAKE SURE TO SEND eventierUserEmail AND serviceType FROM THE
-     * ! FRONTEND
-     */
     let { eventierUserEmail } = req.body;
     const { serviceType } = req.body;
     eventierUserEmail = eventierUserEmail.split("@")[0];

@@ -1,6 +1,8 @@
 const connection = require("../database/connection");
+const path = require("path");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
+const glob = require("glob");
 
 const GetAllServiceProviders = async (req, res) => {
   try {
@@ -277,6 +279,8 @@ const ChangeOrderStatus = async (req, res) => {
 
 const GetAllServices = async (req, res) => {
   const { eventierUserEmail } = req.body;
+  const emailPrefix = eventierUserEmail.split("@")[0];
+  let currentService = 0;
   try {
     const [serviceProviderRow] = await connection.execute(
       "SELECT * FROM service_provider WHERE email = ?",
@@ -287,6 +291,27 @@ const GetAllServices = async (req, res) => {
       "SELECT * FROM services WHERE service_provider_id = ?",
       [serviceProviderId]
     );
+
+    for (const serviceRow of servicesRows) {
+      const { service_type } = serviceRow;
+      const matches = glob.sync(
+        emailPrefix + "--" + service_type + "--" + "*.*",
+        {
+          cwd: path.join(
+            __dirname,
+            "../../images/service-images/" + eventierUserEmail
+          ),
+        }
+      );
+      if (matches.length > 0) {
+        console.log("adding dynamic property to object");
+        servicesRows[currentService][
+          "static_url"
+        ] = `http://localhost:3000/static/${eventierUserEmail}/${matches[0]}`;
+      }
+      currentService++;
+    }
+
     return res.status(200).json({ servicesRows });
   } catch (error) {
     console.log(error);
