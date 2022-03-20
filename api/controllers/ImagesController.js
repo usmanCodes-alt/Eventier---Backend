@@ -3,9 +3,7 @@ const AddServiceImage = (req, res) => {
 };
 
 const AddServiceProviderProfilePicture = (req, res) => {
-  return res
-    .status(200)
-    .json({ message: "Profile picture uploaded successfully" });
+  return res.status(200).send(req.file);
 };
 
 module.exports = {

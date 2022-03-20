@@ -19,6 +19,7 @@ const GetAllServiceProviders = async (req, res) => {
 const GetServiceProviderByEmail = async (req, res) => {
   try {
     const { email } = req.params;
+    const trimmedEmail = email.split("@")[0];
     if (!email || !validator.isEmail(email)) {
       return res
         .status(404)
@@ -35,6 +36,15 @@ const GetServiceProviderByEmail = async (req, res) => {
       return res
         .status(404)
         .json({ message: "No service provider registered with this email" });
+    }
+    // look for profile picture and add its static URL to the response object
+    const matches = glob.sync(trimmedEmail + "*.*", {
+      cwd: path.join(__dirname, "../../images/profile-pictures/" + email),
+    });
+    console.log(matches);
+    if (!matches.length == 0) {
+      console.log("Adding static URL");
+      eventierUserInformation[0].profile_picture_static_url = matches[0];
     }
     return res
       .status(200)

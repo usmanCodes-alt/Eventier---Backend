@@ -12,6 +12,11 @@ app.use(
   "/static",
   express.static(path.join(__dirname, "images/service-images"))
 );
+app.use(
+  "/profile-pictures",
+  express.static(path.join(__dirname, "images/profile-pictures"))
+);
+
 app.use(morgan("tiny"));
 app.use(cors());
 app.use(express.json());
