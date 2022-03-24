@@ -26,7 +26,7 @@ const GetServiceProviderByEmail = async (req, res) => {
         .json({ message: "Please provide a valid email address" });
     }
     const [eventierUserInformation] = await connection.execute(
-      `SELECT first_name, last_name, email, phone_number, street, city, country, province
+      `SELECT first_name, last_name, email, phone_number, street, city, country, province, store_name
       FROM service_provider
       INNER JOIN address ON service_provider.fk_address_id = address.address_id
       WHERE service_provider.email = ?;`,
