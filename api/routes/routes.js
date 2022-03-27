@@ -8,6 +8,7 @@ const {
   PlaceOrder,
   CustomerUpdateProfile,
   GetCustomerOrders,
+  GetAllServicesForCustomers,
   CustomerLogout,
 } = require("../controllers/CustomerController");
 const {
@@ -17,6 +18,8 @@ const {
   GetAllServiceProviderOrders,
   ChangeOrderStatus,
   GetAllServices,
+  GetServiceDetailsById,
+  GetOrderDetailsById,
   GetRatingsAndReviews,
   UpdateServiceProviderProfile,
   GetServiceProviderByEmail,
@@ -89,6 +92,12 @@ router.post(
 
 router.get("/customers/all", GetAllCustomers);
 router.post("/customers/create-new", CreateNewCustomer);
+router.get(
+  "/customers/get-services",
+  authentication,
+  customersOnly,
+  GetAllServicesForCustomers
+);
 router.post("/customers/review", authentication, customersOnly, AddReview);
 router.post(
   "/customers/place-order",
@@ -188,6 +197,12 @@ router.delete(
   serviceProvidersOnly,
   ServiceProviderLogout
 );
+
+/**
+ * Accessible to Customers & Service Providers
+ */
+router.get("/services/:serviceId", authentication, GetServiceDetailsById);
+router.get("/orders/:orderId", authentication, GetOrderDetailsById);
 
 router.all("*", (req, res) => {
   return res.status(404).json({ message: "Invalid or not supported URL" });

@@ -257,6 +257,38 @@ const GetAllOrders = async (req, res) => {
   }
 };
 
+const GetOrderDetailsById = async (req, res) => {
+  const { orderId } = req.params;
+  if (!orderId) {
+    return res.status(400).json({ message: "Please provide a valid order Id" });
+  }
+
+  try {
+    const [orderDetailRow] = await connection.execute(
+      `
+    SELECT order_name, payment_status, status AS order_status, customers.first_name AS customer_fname, customers.last_name AS customer_lname, customers.email AS customer_email,
+    service_provider.first_name AS service_provider_fname, service_provider.last_name AS service_provider_lname, service_provider.email AS service_provider_email, service_provider.phone_number AS service_provider_phone
+    FROM orders
+    INNER JOIN customers ON customers.customer_id = orders.customer_id
+    INNER JOIN service_provider ON service_provider.service_provider_id = orders.service_provider_id
+    WHERE order_id = ?;
+    `,
+      [orderId]
+    );
+
+    if (orderDetailRow.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No order found by the provided order Id" });
+    }
+
+    return res.status(200).json({ orderDetails: orderDetailRow[0] });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 const ChangeOrderStatus = async (req, res) => {
   const { eventierUserEmail } = req.body;
   const { newStatus, orderId } = req.body;
@@ -323,6 +355,35 @@ const GetAllServices = async (req, res) => {
     }
 
     return res.status(200).json({ servicesRows });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const GetServiceDetailsById = async (req, res) => {
+  const { serviceId } = req.params;
+  if (!serviceId) {
+    return res
+      .status(400)
+      .json({ message: "Please provide a valid service Id" });
+  }
+  try {
+    const [serviceDetailRow] = await connection.execute(
+      `SELECT service_name, service_type, unit_price, status, description, discount, service_provider.first_name, service_provider.last_name, service_provider.email, service_provider.phone_number
+      FROM services
+      INNER JOIN service_provider ON services.service_provider_id = service_provider.service_provider_id
+      WHERE service_id = ?;`,
+      [serviceId]
+    );
+
+    if (serviceDetailRow.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No services found by the provided service Id" });
+    }
+
+    return res.status(200).json({ service: serviceDetailRow[0] });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error" });
@@ -445,8 +506,10 @@ module.exports = {
   CreateNewServiceProvider,
   AddNewService,
   GetAllServiceProviderOrders: GetAllOrders,
+  GetOrderDetailsById,
   ChangeOrderStatus,
   GetAllServices,
+  GetServiceDetailsById,
   GetRatingsAndReviews,
   UpdateServiceProviderProfile,
   GetServiceProviderByEmail,
