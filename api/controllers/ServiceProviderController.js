@@ -383,6 +383,21 @@ const GetServiceDetailsById = async (req, res) => {
         .json({ message: "No services found by the provided service Id" });
     }
 
+    const { service_type } = serviceDetailRow[0];
+    const { email } = serviceDetailRow[0];
+    const emailPrefix = email.split("@")[0];
+
+    let matches = glob.sync(emailPrefix + "--" + service_type + "--" + "*.*", {
+      cwd: path.join(__dirname, "../../images/service-images/" + email),
+    });
+
+    if (matches.length > 0) {
+      matches = matches.map(
+        (match) => `http://localhost:3000/static/${email}/${match}`
+      );
+      serviceDetailRow[0]["static_urls"] = matches;
+    }
+
     return res.status(200).json({ service: serviceDetailRow[0] });
   } catch (error) {
     console.log(error);

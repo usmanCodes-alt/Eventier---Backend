@@ -73,6 +73,28 @@ const CreateNewCustomer = async (req, res) => {
   }
 };
 
+const GetLoggedInCustomer = async (req, res) => {
+  const { eventierUserEmail } = req.body;
+  if (!eventierUserEmail) {
+    return res
+      .status(412)
+      .json({ message: "Please login to get customer details." });
+  }
+  const [customerRow] = await connection.execute(
+    `SELECT first_name, last_name, email, phone_number, street, city, country, province
+    FROM customers
+    INNER JOIN address ON customers.address_id = address.address_id
+    WHERE customers.email = ?`,
+    [eventierUserEmail]
+  );
+  if (!customerRow.length === 0) {
+    return res
+      .status(404)
+      .json({ message: "No customer found by the provided token" });
+  }
+  return res.status(200).json(customerRow);
+};
+
 const AddReview = async (req, res) => {
   const { eventierUserEmail } = req.body; // from authentication middleware
   const { reviewMessage, starRating, serviceId } = req.body;
@@ -324,7 +346,7 @@ const GetAllServicesForCustomers = async (req, res) => {
   let currentService = 0;
   try {
     const [services] =
-      await connection.execute(`SELECT service_name, service_type, email FROM services
+      await connection.execute(`SELECT service_id as 'service_database_id', service_name, service_type, email FROM services
     INNER JOIN service_provider ON services.service_provider_id = service_provider.service_provider_id;`);
     for (const service of services) {
       const { service_type, email } = service;
@@ -378,6 +400,7 @@ const Logout = async (req, res) => {
 module.exports = {
   GetAllCustomers,
   CreateNewCustomer,
+  GetLoggedInCustomer,
   AddReview,
   PlaceOrder,
   CustomerUpdateProfile: UpdateProfile,

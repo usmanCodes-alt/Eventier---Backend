@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   GetAllCustomers,
   CreateNewCustomer,
+  GetLoggedInCustomer,
   AddReview,
   PlaceOrder,
   CustomerUpdateProfile,
@@ -52,6 +53,7 @@ const {
   serviceImagesUploadEngine,
   profilePictureUploadEngine,
 } = require("../utils/multer-setups");
+const { GetEventierUserByEmail } = require("../controllers/GenericController");
 
 /**
  * Generic login
@@ -92,6 +94,12 @@ router.post(
 
 router.get("/customers/all", GetAllCustomers);
 router.post("/customers/create-new", CreateNewCustomer);
+router.get(
+  "/customers/get-details",
+  authentication,
+  customersOnly,
+  GetLoggedInCustomer
+);
 router.get(
   "/customers/get-services",
   authentication,
@@ -199,10 +207,11 @@ router.delete(
 );
 
 /**
- * Accessible to Customers & Service Providers
+ * Accessible to authenticated Customers & Service Providers
  */
 router.get("/services/:serviceId", authentication, GetServiceDetailsById);
 router.get("/orders/:orderId", authentication, GetOrderDetailsById);
+router.get("/get/:eventierUserEmail", GetEventierUserByEmail);
 
 router.all("*", (req, res) => {
   return res.status(404).json({ message: "Invalid or not supported URL" });
