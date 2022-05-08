@@ -140,30 +140,21 @@ const AddReview = async (req, res) => {
 };
 
 const PlaceOrder = async (req, res) => {
+  const requiredFields = ["service_name", "quantity", "serviceId"];
+  let missingValue = false;
   const { eventierUserEmail } = req.body;
-  const {
-    orderName,
-    orderDate,
-    quantity,
-    extraDetails = null,
-    paymentStatus = "unpaid",
-    serviceId,
-    deliveryAddressArea,
-    deliveryAddressCity,
-    deliveryAddressProvince,
-    deliveryAddressCountry,
-  } = req.body;
-  if (
-    !orderName ||
-    !orderDate ||
-    !quantity ||
-    !paymentStatus ||
-    !serviceId ||
-    !deliveryAddressArea ||
-    !deliveryAddressCity ||
-    !deliveryAddressCountry ||
-    !deliveryAddressProvince
-  ) {
+  const { cartItems } = req.body; // extracting array of all ordered services
+
+  // check for missing values
+  for (const cartItem of cartItems) {
+    const keys = Object.keys(cartItem);
+    for (const key of keys) {
+      if (requiredFields.some((field) => field === key) && !cartItem[key]) {
+        missingValue = true;
+      }
+    }
+  }
+  if (missingValue) {
     return res
       .status(412)
       .json({ message: "Please provide all required fields!" });
@@ -171,48 +162,75 @@ const PlaceOrder = async (req, res) => {
 
   try {
     const [customerRows] = await connection.execute(
-      "SELECT * FROM customers WHERE email = ?",
+      `SELECT customer_id, first_name, last_name, email, phone_number, street, city, country, province FROM customers
+      INNER JOIN address ON customers.address_id = address.address_id
+      WHERE customers.email = ?`,
       [eventierUserEmail]
     );
     const customerId = customerRows[0].customer_id;
-    const [servicesRows] = await connection.execute(
-      "SELECT * FROM services WHERE service_id = ?",
-      [serviceId]
-    );
-    const blockStatus = servicesRows[0].blocked;
-    if (blockStatus === "1") {
-      return res.status(406).json({ message: "This service is blocked" });
-    }
-    const serviceProviderId = servicesRows[0].service_provider_id;
-    const [deliveryAddressRow] = await connection.execute(
-      "INSERT INTO order_delivery_address (delivery_address_area, delivery_address_city, delivery_address_province, delivery_address_country) VALUES (?, ?, ?, ?)",
-      [
-        deliveryAddressArea,
-        deliveryAddressCity,
-        deliveryAddressProvince,
-        deliveryAddressCountry,
-      ]
-    );
-    const addressId = deliveryAddressRow.insertId;
+    const { street, city, country, province } = customerRows[0];
 
-    await connection.execute(
-      "INSERT INTO orders (customer_id, service_provider_id, service_id, order_name, order_date, delivery_date, quantity, extra_detail, payment_status, status, delivery_address_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [
-        customerId,
-        serviceProviderId,
+    for (const cartItem of cartItems) {
+      const {
+        service_name,
+        // service_type,
+        // unit_price,
+        // status,
+        // description,
+        // discount,
+        // first_name,
+        // last_name,
+        // email,
+        // phone_number,
         serviceId,
-        orderName,
         orderDate,
-        null,
         quantity,
-        extraDetails,
-        paymentStatus,
-        null,
-        addressId,
-      ]
-    );
+        extraDetails = null,
+      } = cartItem;
 
-    return res.status(201).json({ message: "New order has been created!" });
+      // check for block status
+      const [servicesRows] = await connection.execute(
+        "SELECT * FROM services WHERE service_id = ?",
+        [serviceId]
+      );
+      const blockStatus = servicesRows[0].blocked;
+      if (blockStatus === "1") {
+        return res.status(406).json({ message: "This service is blocked" });
+      }
+
+      // insert data into delivery address table
+      const serviceProviderId = servicesRows[0].service_provider_id;
+      const [deliveryAddressRow] = await connection.execute(
+        "INSERT INTO order_delivery_address (delivery_address_area, delivery_address_city, delivery_address_province, delivery_address_country) VALUES (?, ?, ?, ?)",
+        [street, city, province, country]
+      );
+
+      // insert data into orders table
+      const addressId = deliveryAddressRow.insertId;
+      let now = new Date();
+      let day = ("0" + now.getDate()).slice(-2);
+      let month = ("0" + (now.getMonth() + 1)).slice(-2);
+      let today = now.getFullYear() + "-" + month + "-" + day;
+
+      await connection.execute(
+        "INSERT INTO orders (customer_id, service_provider_id, service_id, order_name, order_date, delivery_date, quantity, extra_detail, payment_status, status, delivery_address_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          customerId,
+          serviceProviderId,
+          serviceId,
+          service_name,
+          today,
+          null, // delivery date
+          quantity,
+          extraDetails,
+          "unpaid",
+          null, // order status
+          addressId,
+        ]
+      );
+    }
+
+    return res.status(201).json({ message: "User order has been created!" });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error" });

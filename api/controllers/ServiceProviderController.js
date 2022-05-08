@@ -72,7 +72,7 @@ const CreateNewServiceProvider = async (req, res) => {
     confirmPassword,
     street, // set as optional
     city,
-    province, // set as optional
+    province,
     country,
     phoneNumber,
   } = req.body;
@@ -92,6 +92,20 @@ const CreateNewServiceProvider = async (req, res) => {
       .status(412)
       .json({ message: "Please provide all required fields" });
   }
+
+  console.log({
+    firstName,
+    lastName,
+    storeName,
+    email,
+    password,
+    confirmPassword,
+    street,
+    city,
+    province,
+    country,
+    phoneNumber,
+  });
 
   // check if both passwords are same
   if (password !== confirmPassword) {
