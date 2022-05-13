@@ -255,7 +255,7 @@ const GetAllOrders = async (req, res) => {
     );
     const serviceProviderId = serviceProviderRow[0].service_provider_id;
     const queryValuesArray = [serviceProviderId];
-    let joinQuery = `SELECT customers.first_name AS customer_name, services.service_type AS service_type, orders.order_name AS order_name, orders.payment_status, orders.order_date, orders.status FROM orders INNER JOIN customers ON orders.customer_id = customers.customer_id INNER JOIN services ON orders.service_id = services.service_id WHERE orders.service_provider_id = ?`;
+    let joinQuery = `SELECT order_id, customers.first_name AS customer_name, services.service_type AS service_type, orders.order_name AS order_name, orders.payment_status, orders.order_date, orders.status FROM orders INNER JOIN customers ON orders.customer_id = customers.customer_id INNER JOIN services ON orders.service_id = services.service_id WHERE orders.service_provider_id = ?`;
 
     // let query = "SELECT * FROM orders WHERE service_provider_id = ?";
     if (type) {
@@ -333,6 +333,46 @@ const ChangeOrderStatus = async (req, res) => {
   }
 };
 
+const UpdateService = async (req, res) => {
+  const {
+    serviceName,
+    unitPrice,
+    serviceStatus,
+    description,
+    discount,
+    serviceId,
+  } = req.body;
+  if (
+    !serviceId ||
+    !serviceName ||
+    !unitPrice ||
+    !serviceStatus ||
+    !description ||
+    !String(discount)
+  ) {
+    return res
+      .status(412)
+      .json({ message: "Please provide all required fields" });
+  }
+
+  try {
+    await connection.execute(
+      "UPDATE services SET service_name = ?, unit_price = ?, status = ?, discount = ?, description = ? WHERE service_id = ?",
+      [serviceName, unitPrice, serviceStatus, discount, description, serviceId]
+    );
+    const [serviceRow] = await connection.execute(
+      "SELECT * FROM services WHERE service_id = ?",
+      [serviceId]
+    );
+    return res
+      .status(200)
+      .json({ message: "Service updated", service: serviceRow[0] });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
 const GetAllServices = async (req, res) => {
   const { eventierUserEmail } = req.body;
   const emailPrefix = eventierUserEmail.split("@")[0];
@@ -384,7 +424,7 @@ const GetServiceDetailsById = async (req, res) => {
   }
   try {
     const [serviceDetailRow] = await connection.execute(
-      `SELECT service_name, service_type, unit_price, status, description, discount, service_provider.first_name, service_provider.last_name, service_provider.email, service_provider.phone_number
+      `SELECT service_name, service_type, unit_price, status, description, discount, blocked, service_provider.first_name, service_provider.last_name, service_provider.email, service_provider.phone_number
       FROM services
       INNER JOIN service_provider ON services.service_provider_id = service_provider.service_provider_id
       WHERE service_id = ?;`,
@@ -541,6 +581,7 @@ module.exports = {
   GetServiceDetailsById,
   GetRatingsAndReviews,
   UpdateServiceProviderProfile,
+  UpdateService,
   GetServiceProviderByEmail,
   ServiceProviderLogout: Logout,
 };

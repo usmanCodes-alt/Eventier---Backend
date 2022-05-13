@@ -6,7 +6,11 @@ const {
   CreateNewCustomer,
   GetLoggedInCustomer,
   AddReview,
+  GetReviewsOfServiceById,
   PlaceOrder,
+  AddToWishList,
+  GetWishList,
+  RemoveServiceFromWishList,
   CustomerUpdateProfile,
   GetCustomerOrders,
   GetAllServicesForCustomers,
@@ -24,6 +28,7 @@ const {
   GetRatingsAndReviews,
   UpdateServiceProviderProfile,
   GetServiceProviderByEmail,
+  UpdateService,
   ServiceProviderLogout,
 } = require("../controllers/ServiceProviderController");
 const {
@@ -113,6 +118,24 @@ router.post(
   customersOnly,
   PlaceOrder
 );
+router.post(
+  "/customers/wish-list/add",
+  authentication,
+  customersOnly,
+  AddToWishList
+);
+router.get(
+  "/customers/get-wish-list",
+  authentication,
+  customersOnly,
+  GetWishList
+);
+router.delete(
+  "/customers/wish-list/remove/:wishListId",
+  authentication,
+  customersOnly,
+  RemoveServiceFromWishList
+);
 router.get(
   "/customers/get-orders",
   authentication,
@@ -152,6 +175,12 @@ router.post(
   /**addServiceCredentialsCheckMiddleware */
   /*upload.array("serviceImages", 5),*/
   AddNewService
+);
+router.patch(
+  "/service-provider/update-service",
+  authentication,
+  serviceProvidersOnly,
+  UpdateService
 );
 router.post(
   "/service-provider/add-service/upload-image",
@@ -212,6 +241,7 @@ router.delete(
 router.get("/services/:serviceId", authentication, GetServiceDetailsById);
 router.get("/orders/:orderId", authentication, GetOrderDetailsById);
 router.get("/get/:eventierUserEmail", GetEventierUserByEmail);
+router.get("/get-reviews/:serviceId", authentication, GetReviewsOfServiceById);
 
 router.all("*", (req, res) => {
   return res.status(404).json({ message: "Invalid or not supported URL" });
