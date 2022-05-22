@@ -82,7 +82,7 @@ const GetLoggedInCustomer = async (req, res) => {
       .json({ message: "Please login to get customer details." });
   }
 
-  let query = `SELECT first_name, last_name, email, phone_number`;
+  let query = `SELECT first_name, last_name, email`;
 
   const [customerAddressRow] = await connection.execute(
     "SELECT address_id FROM customers WHERE email = ?",
@@ -102,13 +102,15 @@ const GetLoggedInCustomer = async (req, res) => {
     // there is an address.
     query =
       query +
-      ` street, city, country, province FROM customers
+      `, street, city, country, province FROM customers
     INNER JOIN address ON customers.address_id = address.address_id
     WHERE customers.email = ?`;
   } else {
     // there is no address
     query = query + ` FROM customers WHERE email = ?`;
   }
+
+  console.log(query);
 
   const [customerRow] = await connection.execute(query, [eventierUserEmail]);
   if (!customerRow.length === 0) {

@@ -36,13 +36,20 @@ const serviceImageFileStorageEngine = multer.diskStorage({
       )
     );
   },
-  filename: (req, file, callback) => {
+  filename: async (req, file, callback) => {
+    console.log(req.body);
     let { eventierUserEmail } = req.body;
     const { serviceType } = req.body;
     eventierUserEmail = eventierUserEmail.split("@")[0];
 
     const matches = glob.sync(
-      eventierUserEmail + "--" + serviceType + "--" + "*.*",
+      eventierUserEmail +
+        "--" +
+        serviceType +
+        "--" +
+        req.uniqueImageUuid + // during updating images send this on req.body, and move it to req
+        "--" +
+        "*.*",
       {
         cwd: path.join(
           __dirname,
@@ -57,22 +64,42 @@ const serviceImageFileStorageEngine = multer.diskStorage({
 
     callback(
       null,
-      eventierUserEmail + "--" + serviceType + "--" + file.originalname
+      eventierUserEmail +
+        "--" +
+        serviceType +
+        "--" +
+        req.uniqueImageUuid +
+        "--" +
+        file.originalname
     );
   },
 });
 
 const serviceImagesUploadEngine = multer({
   storage: serviceImageFileStorageEngine,
-  fileFilter: function (req, file, cb) {
-    const allowedExtensions = /jpeg|jpg|png/;
-    const extensionNameTest = allowedExtensions.test(
-      path.extname(file.originalname).toLocaleLowerCase()
-    );
-    if (extensionNameTest) {
-      return cb(null, true);
+  // fileFilter: function (req, file, cb) {
+  //   const allowedExtensions = /jpeg|jpg|png/;
+  //   const extensionNameTest = allowedExtensions.test(
+  //     path.extname(file.originalname).toLocaleLowerCase()
+  //   );
+  //   if (extensionNameTest) {
+  //     return cb(null, true);
+  //   } else {
+  //     return cb("Wrong extension", false);
+  //   }
+  // },
+  fileFilter: (req, file, cb) => {
+    if (
+      file.mimetype == "image/png" ||
+      file.mimetype == "image/jpeg" ||
+      file.mimetype == "image/jpg"
+    ) {
+      cb(null, true);
     } else {
-      return cb("Wrong extension", false);
+      cb(null, false);
+      const err = new Error("Only .jpg .jpeg .png images are supported!");
+      err.name = "ExtensionError";
+      return cb(err);
     }
   },
 });

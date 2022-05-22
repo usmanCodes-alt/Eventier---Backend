@@ -3,6 +3,7 @@ const path = require("path");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 const glob = require("glob");
+const fs = require("fs");
 
 const GetAllServiceProviders = async (req, res) => {
   try {
@@ -169,6 +170,12 @@ const CreateNewServiceProvider = async (req, res) => {
   }
 };
 
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ * @returns Creates a new service only if there is no service of that same service type already available for the service provider.
+ */
 const AddNewService = async (req, res) => {
   const {
     serviceName,
@@ -200,8 +207,9 @@ const AddNewService = async (req, res) => {
       [eventierUserEmail]
     );
     const serviceProviderId = serviceProviderRow[0].service_provider_id;
+
     await connection.execute(
-      "INSERT INTO services (service_name, service_type, unit_price, status, discount, description, service_provider_id, blocked) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO services (service_name, service_type, unit_price, status, discount, description, service_provider_id, blocked, images_uuid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         serviceName,
         serviceType,
@@ -211,6 +219,7 @@ const AddNewService = async (req, res) => {
         description,
         serviceProviderId,
         String(0), // means un-blocked
+        req.uniqueImageUuid,
       ]
     );
     return res.status(201).json({ message: "Service added Successfully!" });
@@ -461,7 +470,7 @@ const GetServiceDetailsById = async (req, res) => {
 
 const GetRatingsAndReviews = async (req, res) => {
   const { eventierUserEmail } = req.body;
-  const { serviceId } = req.body;
+  const { serviceId } = req.params;
 
   if (!serviceId) {
     return res
@@ -493,6 +502,74 @@ const GetRatingsAndReviews = async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
+const GetAllRatingsAndReviews = async (req, res) => {
+  const { eventierUserEmail } = req.body;
+
+  if (!eventierUserEmail) {
+    return res.status(412).json({ message: "Please provide a valid email" });
+  }
+
+  try {
+    const [serviceProviderIdRow] = await connection.execute(
+      "SELECT service_provider_id FROM service_provider WHERE email = ?",
+      [eventierUserEmail]
+    );
+    const serviceProviderId = serviceProviderIdRow[0].service_provider_id;
+    console.log(serviceProviderId);
+
+    const [allReviews] = await connection.execute(
+      `SELECT customers.first_name, review_message, star_rating FROM reviews
+    INNER JOIN customers ON reviews.customer_id = customers.customer_id
+    WHERE reviews.service_provider_id = ?`,
+      [serviceProviderId]
+    );
+
+    return res.status(200).json({ allReviews });
+  } catch (error) {
+    console.log(err);
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};
+
+const DeleteServiceImage = async (req, res) => {
+  let { serviceImageStaticUrl } = req.body;
+  if (!serviceImageStaticUrl) {
+    return res.status(412).json({
+      message:
+        "Please provide a service static url to delete image as provided by the backend.",
+    });
+  }
+
+  serviceImageStaticUrl = serviceImageStaticUrl.split("/");
+
+  const serviceProviderEmail = serviceImageStaticUrl.at(-2).trim();
+  const imageName = serviceImageStaticUrl.at(-1).trim();
+
+  try {
+    const matches = glob.sync(imageName, {
+      cwd: path.join(
+        __dirname,
+        "../../images/service-images/" + serviceProviderEmail
+      ),
+    });
+
+    if (matches.length === 0)
+      return res.status(404).json({ message: "No image found!" });
+
+    const directory = path.join(
+      __dirname,
+      "../../images/service-images/" + serviceProviderEmail
+    );
+    fs.readdirSync(directory).forEach((file) => {
+      if (file === imageName.trim()) fs.rmSync(`${directory}/${file}`);
+    });
+    return res.status(200).json({ message: "Image Deleted" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -580,6 +657,8 @@ module.exports = {
   GetAllServices,
   GetServiceDetailsById,
   GetRatingsAndReviews,
+  GetAllRatingsAndReviews,
+  DeleteServiceImage,
   UpdateServiceProviderProfile,
   UpdateService,
   GetServiceProviderByEmail,

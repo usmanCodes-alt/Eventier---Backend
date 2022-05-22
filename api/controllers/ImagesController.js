@@ -1,4 +1,9 @@
-const AddServiceImage = (req, res) => {
+const connection = require("../database/connection");
+const fs = require("fs");
+const glob = require("glob");
+const path = require("path");
+
+const AddServiceImage = async (req, res) => {
   return res.status(201).send(req.file);
 };
 

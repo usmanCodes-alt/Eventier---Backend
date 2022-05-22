@@ -24,8 +24,10 @@ const {
   ChangeOrderStatus,
   GetAllServices,
   GetServiceDetailsById,
+  GetAllRatingsAndReviews,
   GetOrderDetailsById,
   GetRatingsAndReviews,
+  DeleteServiceImage,
   UpdateServiceProviderProfile,
   GetServiceProviderByEmail,
   UpdateService,
@@ -59,6 +61,7 @@ const {
   profilePictureUploadEngine,
 } = require("../utils/multer-setups");
 const { GetEventierUserByEmail } = require("../controllers/GenericController");
+const { v4: uuidv4 } = require("uuid");
 
 /**
  * Generic login
@@ -142,6 +145,13 @@ router.get(
   customersOnly,
   GetCustomerOrders
 );
+router.post(
+  "/customers/profile-picture/add",
+  authentication,
+  customersOnly,
+  profilePictureUploadEngine.single("cu-profile-picture"),
+  AddServiceProviderProfilePicture
+);
 router.patch(
   "/customers/update-profile",
   authentication,
@@ -168,27 +178,38 @@ router.get(
   GetServiceProviderByEmail
 );
 router.post("/service-providers/create-new", CreateNewServiceProvider);
+// router.post(
+//   "/service-providers/add-service",
+//   authentication,
+//   serviceProvidersOnly,
+//   AddNewService
+// );
+
 router.post(
-  "/service-providers/add-service",
+  "/service-providers/add-service-with-images",
   authentication,
   serviceProvidersOnly,
-  /**addServiceCredentialsCheckMiddleware */
-  /*upload.array("serviceImages", 5),*/
+  (req, res, next) => {
+    req.uniqueImageUuid = uuidv4();
+    next();
+  },
+  serviceImagesUploadEngine.array("service-images", 5),
   AddNewService
 );
+
 router.patch(
   "/service-provider/update-service",
   authentication,
   serviceProvidersOnly,
   UpdateService
 );
-router.post(
-  "/service-provider/add-service/upload-image",
-  authentication,
-  serviceProvidersOnly,
-  serviceImagesUploadEngine.single("serviceImage"),
-  AddServiceImage
-);
+// router.post(
+//   "/service-provider/add-service/upload-image",
+//   authentication,
+//   serviceProvidersOnly,
+//   serviceImagesUploadEngine.single("serviceImage"),
+//   AddServiceImage
+// );
 router.post(
   "/service-provider/profile-picture/add",
   authentication,
@@ -204,6 +225,12 @@ router.get(
   serviceProvidersOnly,
   GetAllServiceProviderOrders
 );
+router.delete(
+  "/service-provider/delete-service-img",
+  authentication,
+  serviceProvidersOnly,
+  DeleteServiceImage
+);
 router.patch(
   "/service-providers/update-order-status",
   authentication,
@@ -217,10 +244,16 @@ router.get(
   GetAllServices
 );
 router.get(
-  "/service-providers/get-ratings-and-reviews",
+  "/service-providers/get-ratings-and-reviews/:serviceId",
   authentication,
   serviceProvidersOnly,
   GetRatingsAndReviews
+);
+router.get(
+  "/service-provider/get-all-ratings-and-reviews",
+  authentication,
+  serviceProvidersOnly,
+  GetAllRatingsAndReviews
 );
 router.patch(
   "/service-providers/update-profile",
