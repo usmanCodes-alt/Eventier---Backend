@@ -532,14 +532,14 @@ const GetAllServicesForCustomers = async (req, res) => {
   let currentService = 0;
   try {
     const [services] =
-      await connection.execute(`SELECT service_id as 'service_database_id', service_name, service_type, email FROM services
+      await connection.execute(`SELECT service_id as 'service_database_id', service_name, service_type, email, images_uuid FROM services
     INNER JOIN service_provider ON services.service_provider_id = service_provider.service_provider_id;`);
     for (const service of services) {
-      const { service_type, email } = service;
+      const { service_type, email, images_uuid } = service;
       const emailPrefix = email.split("@")[0];
 
       const matches = glob.sync(
-        emailPrefix + "--" + service_type + "--" + "*.*",
+        emailPrefix + "--" + service_type + "--" + images_uuid + "--" + "*.*",
         {
           cwd: path.join(__dirname, "../../images/service-images/" + email),
         }

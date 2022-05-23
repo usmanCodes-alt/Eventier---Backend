@@ -392,15 +392,18 @@ const GetAllServices = async (req, res) => {
       [eventierUserEmail]
     );
     const serviceProviderId = serviceProviderRow[0].service_provider_id;
+
+    // get all services for this service provider.
     const [servicesRows] = await connection.execute(
       "SELECT * FROM services WHERE service_provider_id = ?",
       [serviceProviderId]
     );
 
+    // get images for each service for this service provider.
     for (const serviceRow of servicesRows) {
-      const { service_type } = serviceRow;
+      const { service_type, images_uuid } = serviceRow;
       const matches = glob.sync(
-        emailPrefix + "--" + service_type + "--" + "*.*",
+        emailPrefix + "--" + service_type + "--" + images_uuid + "--" + "*.*",
         {
           cwd: path.join(
             __dirname,
@@ -408,6 +411,8 @@ const GetAllServices = async (req, res) => {
           ),
         }
       );
+
+      // if there are images, add one images of that particular service to serviceRows response array.
       if (matches.length > 0) {
         console.log("adding dynamic property to object");
         servicesRows[currentService][
@@ -416,6 +421,8 @@ const GetAllServices = async (req, res) => {
       }
       currentService++;
     }
+
+    console.log(servicesRows);
 
     return res.status(200).json({ servicesRows });
   } catch (error) {
@@ -433,7 +440,7 @@ const GetServiceDetailsById = async (req, res) => {
   }
   try {
     const [serviceDetailRow] = await connection.execute(
-      `SELECT service_name, service_type, unit_price, status, description, discount, blocked, service_provider.first_name, service_provider.last_name, service_provider.email, service_provider.phone_number
+      `SELECT service_name, service_type, unit_price, status, description, discount, blocked, images_uuid, service_provider.first_name, service_provider.last_name, service_provider.email, service_provider.phone_number
       FROM services
       INNER JOIN service_provider ON services.service_provider_id = service_provider.service_provider_id
       WHERE service_id = ?;`,
@@ -446,13 +453,16 @@ const GetServiceDetailsById = async (req, res) => {
         .json({ message: "No services found by the provided service Id" });
     }
 
-    const { service_type } = serviceDetailRow[0];
+    const { service_type, images_uuid } = serviceDetailRow[0];
     const { email } = serviceDetailRow[0];
     const emailPrefix = email.split("@")[0];
 
-    let matches = glob.sync(emailPrefix + "--" + service_type + "--" + "*.*", {
-      cwd: path.join(__dirname, "../../images/service-images/" + email),
-    });
+    let matches = glob.sync(
+      emailPrefix + "--" + service_type + "--" + images_uuid + "--" + "*.*",
+      {
+        cwd: path.join(__dirname, "../../images/service-images/" + email),
+      }
+    );
 
     if (matches.length > 0) {
       matches = matches.map(
@@ -547,6 +557,8 @@ const DeleteServiceImage = async (req, res) => {
 
   const serviceProviderEmail = serviceImageStaticUrl.at(-2).trim();
   const imageName = serviceImageStaticUrl.at(-1).trim();
+  // const serviceImageUuid = imageName.split("--").at(-2);
+  // console.log(serviceImageUuid);
 
   try {
     const matches = glob.sync(imageName, {

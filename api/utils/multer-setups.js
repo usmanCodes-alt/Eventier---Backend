@@ -42,12 +42,16 @@ const serviceImageFileStorageEngine = multer.diskStorage({
     const { serviceType } = req.body;
     eventierUserEmail = eventierUserEmail.split("@")[0];
 
+    const uniqueImageUuid = req.body.uniqueImageUuid
+      ? req.body.uniqueImageUuid
+      : req.uniqueImageUuid;
+
     const matches = glob.sync(
       eventierUserEmail +
         "--" +
         serviceType +
         "--" +
-        req.uniqueImageUuid + // during updating images send this on req.body, and move it to req
+        uniqueImageUuid +
         "--" +
         "*.*",
       {
@@ -68,7 +72,7 @@ const serviceImageFileStorageEngine = multer.diskStorage({
         "--" +
         serviceType +
         "--" +
-        req.uniqueImageUuid +
+        uniqueImageUuid +
         "--" +
         file.originalname
     );

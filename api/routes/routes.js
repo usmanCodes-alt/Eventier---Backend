@@ -178,12 +178,6 @@ router.get(
   GetServiceProviderByEmail
 );
 router.post("/service-providers/create-new", CreateNewServiceProvider);
-// router.post(
-//   "/service-providers/add-service",
-//   authentication,
-//   serviceProvidersOnly,
-//   AddNewService
-// );
 
 router.post(
   "/service-providers/add-service-with-images",
@@ -197,19 +191,21 @@ router.post(
   AddNewService
 );
 
+router.post(
+  "/service-providers/update-service/add-service-image",
+  authentication,
+  serviceProvidersOnly,
+  serviceImagesUploadEngine.single("service-image"),
+  AddServiceImage
+);
+
 router.patch(
   "/service-provider/update-service",
   authentication,
   serviceProvidersOnly,
   UpdateService
 );
-// router.post(
-//   "/service-provider/add-service/upload-image",
-//   authentication,
-//   serviceProvidersOnly,
-//   serviceImagesUploadEngine.single("serviceImage"),
-//   AddServiceImage
-// );
+
 router.post(
   "/service-provider/profile-picture/add",
   authentication,
