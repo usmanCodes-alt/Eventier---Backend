@@ -54,6 +54,11 @@ const {
 const {
   GetRankingsFromFlaskAPI,
 } = require("../controllers/RankingsController");
+const {
+  GetEventierUserByEmail,
+  ResetPassword,
+  ValidateOTPAndResetPassword,
+} = require("../controllers/GenericController");
 const authentication = require("../middleware/authentication");
 const {
   customersOnly,
@@ -66,7 +71,7 @@ const {
   serviceImagesUploadEngine,
   profilePictureUploadEngine,
 } = require("../utils/multer-setups");
-const { GetEventierUserByEmail } = require("../controllers/GenericController");
+
 const { v4: uuidv4 } = require("uuid");
 
 /**
@@ -162,7 +167,6 @@ router.patch(
   "/customers/update-profile",
   authentication,
   customersOnly,
-  /*upload.single("profile"),*/
   CustomerUpdateProfile
 );
 router.delete(
@@ -273,6 +277,8 @@ router.delete(
 /**
  * Accessible to authenticated Customers & Service Providers
  */
+router.post("/trigger-reset-password", ResetPassword);
+router.patch("/reset-password", ValidateOTPAndResetPassword);
 router.get("/services/:serviceId", authentication, GetServiceDetailsById);
 router.get("/orders/:orderId", authentication, GetOrderDetailsById);
 router.get("/get/:eventierUserEmail", GetEventierUserByEmail);
