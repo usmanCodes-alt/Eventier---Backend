@@ -431,7 +431,7 @@ const UpdateProfile = async (req, res) => {
   const { eventierUserEmail } = req.body;
 
   const { firstName, lastName, street, city, country, province } = req.body;
-  console.log({ firstName, lastName, street, city, country, province });
+  // console.log({ firstName, lastName, street, city, country, province });
 
   if (!firstName || !lastName || !city || !country || !province || !street) {
     return res

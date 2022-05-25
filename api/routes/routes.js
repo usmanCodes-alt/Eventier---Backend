@@ -47,7 +47,10 @@ const {
   AddServiceImage,
   AddServiceProviderProfilePicture,
 } = require("../controllers/ImagesController");
-const { GenericLogin } = require("../controllers/LoginController");
+const {
+  GenericLogin,
+  ValidateJwtToken,
+} = require("../controllers/LoginController");
 const {
   GetRankingsFromFlaskAPI,
 } = require("../controllers/RankingsController");
@@ -274,6 +277,7 @@ router.get("/services/:serviceId", authentication, GetServiceDetailsById);
 router.get("/orders/:orderId", authentication, GetOrderDetailsById);
 router.get("/get/:eventierUserEmail", GetEventierUserByEmail);
 router.get("/get-reviews/:serviceId", authentication, GetReviewsOfServiceById);
+router.get("/validate-jwt", ValidateJwtToken);
 
 router.get("/review-analysis", GetRankingsFromFlaskAPI);
 
