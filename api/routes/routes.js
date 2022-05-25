@@ -48,6 +48,9 @@ const {
   AddServiceProviderProfilePicture,
 } = require("../controllers/ImagesController");
 const { GenericLogin } = require("../controllers/LoginController");
+const {
+  GetRankingsFromFlaskAPI,
+} = require("../controllers/RankingsController");
 const authentication = require("../middleware/authentication");
 const {
   customersOnly,
@@ -271,6 +274,8 @@ router.get("/services/:serviceId", authentication, GetServiceDetailsById);
 router.get("/orders/:orderId", authentication, GetOrderDetailsById);
 router.get("/get/:eventierUserEmail", GetEventierUserByEmail);
 router.get("/get-reviews/:serviceId", authentication, GetReviewsOfServiceById);
+
+router.get("/review-analysis", GetRankingsFromFlaskAPI);
 
 router.all("*", (req, res) => {
   return res.status(404).json({ message: "Invalid or not supported URL" });

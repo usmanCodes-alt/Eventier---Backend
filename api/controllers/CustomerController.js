@@ -304,12 +304,27 @@ const PlaceOrder = async (req, res) => {
   }
 
   try {
+    // If customer has no address, do not let them make any order.
+    const [customerAddressRow] = await connection.execute(
+      `
+      SELECT address_id FROM customers WHERE email = ?
+    `,
+      [eventierUserEmail]
+    );
+    // console.log(customerAddressRow);
+    const { address_id } = customerAddressRow[0];
+    if (!address_id)
+      return res.status(400).json({
+        message: "Please upload your address first from update profile",
+      });
+
     const [customerRows] = await connection.execute(
       `SELECT customer_id, first_name, last_name, email, phone_number, street, city, country, province FROM customers
       INNER JOIN address ON customers.address_id = address.address_id
       WHERE customers.email = ?`,
       [eventierUserEmail]
     );
+    console.log(customerRows);
     const customerId = customerRows[0].customer_id;
     const { street, city, country, province } = customerRows[0];
 
