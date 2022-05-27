@@ -20,8 +20,38 @@ const GetRankedServiceProviders = async (req, res) => {
         sentimentObject1.polarity - sentimentObject2.polarity
     );
 
-    console.log(sentiments);
-    return res.status(200).json({ sentiments });
+    let serviceProviderReviews = [];
+
+    for (const sentiment of sentiments) {
+      const { polarity, email } = sentiment;
+      if (
+        !serviceProviderReviews.some(
+          (serviceProviderReview) => serviceProviderReview.email === email
+        )
+      ) {
+        serviceProviderReviews.push({
+          email,
+          numberOfPositiveReviews: 0,
+          numberOfNegativeReviews: 0,
+        });
+      }
+
+      if (polarity > 0) {
+        for (const serviceProviderReviewObject of serviceProviderReviews) {
+          if (serviceProviderReviewObject.email === email)
+            serviceProviderReviewObject.numberOfPositiveReviews++;
+        }
+      } else if (polarity < 0) {
+        for (const serviceProviderReviewObject of serviceProviderReviews) {
+          if (serviceProviderReviewObject.email === email)
+            serviceProviderReviewObject.numberOfNegativeReviews++;
+        }
+      }
+    }
+    return res.status(200).json({
+      sentiments,
+      individualServiceProviderReviewsInformation: serviceProviderReviews,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error!" });
