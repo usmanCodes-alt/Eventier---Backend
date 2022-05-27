@@ -4,6 +4,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 const path = require("path");
 const router = require("./api/routes/routes");
+require("./api/utils/sentiment");
 
 const app = express();
 const port = process.env.PORT || 3000;

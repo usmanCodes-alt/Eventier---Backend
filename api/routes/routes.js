@@ -52,7 +52,7 @@ const {
   ValidateJwtToken,
 } = require("../controllers/LoginController");
 const {
-  GetRankingsFromFlaskAPI,
+  GetRankedServiceProviders,
 } = require("../controllers/RankingsController");
 const {
   GetEventierUserByEmail,
@@ -275,7 +275,7 @@ router.delete(
 );
 
 /**
- * Accessible to authenticated Customers & Service Providers
+ * Accessible to Customers & Service Providers
  */
 router.post("/trigger-reset-password", ResetPassword);
 router.patch("/reset-password", ValidateOTPAndResetPassword);
@@ -285,7 +285,7 @@ router.get("/get/:eventierUserEmail", GetEventierUserByEmail);
 router.get("/get-reviews/:serviceId", authentication, GetReviewsOfServiceById);
 router.get("/validate-jwt", ValidateJwtToken);
 
-router.get("/review-analysis", GetRankingsFromFlaskAPI);
+router.get("/rankings", GetRankedServiceProviders);
 
 router.all("*", (req, res) => {
   return res.status(404).json({ message: "Invalid or not supported URL" });

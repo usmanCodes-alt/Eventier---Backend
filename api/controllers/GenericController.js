@@ -55,6 +55,12 @@ const ResetPassword = async (req, res) => {
    * 2) Send user an email with that OTP embedded in it's HTML.
    */
   try {
+    /**
+     * If there are any other OTPs for this user in the database, delete them.
+     */
+    await connection.execute("DELETE FROM otp WHERE eventier_user_email = ?", [
+      eventierUserEmail,
+    ]);
     const [eventierUserRow] = await connection.execute(
       "SELECT * FROM login WHERE login_email = ?",
       [eventierUserEmail]
@@ -67,6 +73,7 @@ const ResetPassword = async (req, res) => {
     }
 
     const OTP = faker.datatype.number(100);
+    console.log("OTP generated: ", OTP);
     await connection.execute(
       "INSERT INTO otp (otp, expired_in, eventier_user_email) VALUES(?, ?, ?)",
       [OTP, new Date(+new Date() + 60000 * 15), eventierUserEmail]
@@ -128,6 +135,10 @@ const ValidateOTPAndResetPassword = async (req, res) => {
 
     // change password!
     console.log("change password");
+    await connection.execute("DELETE FROM otp WHERE eventier_user_email = ?", [
+      eventierUserEmail,
+    ]);
+
     const hashSalt = bcrypt.genSaltSync(Number(process.env.HASH_ROUNDS));
     const hash = bcrypt.hashSync(newPassword, hashSalt);
 

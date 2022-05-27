@@ -1,39 +1,27 @@
 const connection = require("../database/connection");
-const fetch = require("node-fetch");
-// const request = require("request");
 
-const GetRankingsFromFlaskAPI = async (req, res) => {
+const GetRankedServiceProviders = async (req, res) => {
   try {
-    const [reviews] = await connection.execute(
-      "SELECT review_message FROM reviews"
+    const [sentiments] = await connection.execute(`
+    SELECT service_provider.email, service_provider.first_name, service_provider.last_name, polarity, subjectivity
+    FROM sentiment
+    INNER JOIN service_provider
+    ON sentiment.service_provider_id = service_provider.service_provider_id`);
+
+    if (sentiments.length === 0) {
+      return res.status(404).json({
+        message:
+          "No sentiment analysis have been performed yet, please check back after 24 hours!",
+      });
+    }
+
+    sentiments.sort(
+      (sentimentObject1, sentimentObject2) =>
+        sentimentObject1.polarity - sentimentObject2.polarity
     );
 
-    const allReviews = [];
-    reviews.forEach((review) => {
-      allReviews.push(review.review_message);
-    });
-
-    const flaskReviewsObject = {
-      reviews: allReviews,
-    };
-
-    fetch("http://127.0.0.1:5000/get-sentiments", {
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-      body: JSON.stringify({
-        reviews: ["Good", "bad"],
-      }),
-    })
-      .then((res) => {
-        console.log(res); // working!!
-      })
-      .catch((err) => {
-        console.log("err");
-        console.log(err);
-      });
+    console.log(sentiments);
+    return res.status(200).json({ sentiments });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error!" });
@@ -41,5 +29,5 @@ const GetRankingsFromFlaskAPI = async (req, res) => {
 };
 
 module.exports = {
-  GetRankingsFromFlaskAPI,
+  GetRankedServiceProviders,
 };
