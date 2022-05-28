@@ -433,6 +433,8 @@ const GetAllServices = async (req, res) => {
 
 const GetServiceDetailsById = async (req, res) => {
   const { serviceId } = req.params;
+  const { eventierUserEmail } = req.body;
+
   if (!serviceId) {
     return res
       .status(400)
@@ -469,6 +471,31 @@ const GetServiceDetailsById = async (req, res) => {
         (match) => `http://localhost:3000/static/${email}/${match}`
       );
       serviceDetailRow[0]["static_urls"] = matches;
+    }
+
+    /**
+     * if the user is customers, check if they have previously placed an order for this service
+     * if so, allow them to add description, otherwise don't.
+     */
+    const [customerRows] = await connection.execute(
+      "SELECT * FROM customers WHERE email = ?",
+      [eventierUserEmail]
+    );
+    console.log(customerRows);
+
+    if (customerRows.length !== 0) {
+      console.log("user is a customer");
+      // the user is customer, allow them description if they have ordered this item before
+      const [orderRow] = await connection.execute(
+        "SELECT * FROM orders WHERE customer_id = ? AND service_id = ?",
+        [customerRows[0].customer_id, serviceId]
+      );
+
+      console.log(orderRow);
+      if (orderRow.length !== 0) {
+        // they have previously ordered this service.
+        serviceDetailRow[0]["allowDescription"] = true;
+      }
     }
 
     return res.status(200).json({ service: serviceDetailRow[0] });

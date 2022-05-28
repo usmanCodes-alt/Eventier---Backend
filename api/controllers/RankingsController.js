@@ -1,6 +1,7 @@
 const connection = require("../database/connection");
 
 const GetRankedServiceProviders = async (req, res) => {
+  console.log("Running!");
   try {
     const [sentiments] = await connection.execute(`
     SELECT service_provider.email, service_provider.first_name, service_provider.last_name, polarity, subjectivity
