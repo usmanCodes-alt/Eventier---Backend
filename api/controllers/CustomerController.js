@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const validator = require("validator");
 const glob = require("glob");
 const path = require("path");
+const uuid = require("uuid");
 
 const GetAllCustomers = async (req, res) => {
   try {
@@ -297,6 +298,7 @@ const PlaceOrder = async (req, res) => {
       }
     }
   }
+
   if (missingValue) {
     return res
       .status(412)
@@ -328,7 +330,7 @@ const PlaceOrder = async (req, res) => {
     const customerId = customerRows[0].customer_id;
     const { street, city, country, province } = customerRows[0];
 
-    const STRIPE_URL = await ProcessPaymentWithStripe(cartItems);
+    // const STRIPE_URL = await ProcessPaymentWithStripe(cartItems);
 
     for (const cartItem of cartItems) {
       const {
@@ -390,40 +392,54 @@ const PlaceOrder = async (req, res) => {
       );
     }
 
-    return res
-      .status(201)
-      .json({ message: "User order has been created!", STRIPE_URL });
+    return res.status(201).json({ message: "User order has been created!" });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-const ProcessPaymentWithStripe = async (cartItems) => {
-  console.log("Processing payments: ", cartItems);
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ * @returns Creates a customer, charges them and accept the payment!
+ */
+const ProcessPayment = async (req, res) => {
+  const { eventierUserEmail } = req.body;
+  const { cartItems, token } = req.body; // extracting array of all ordered services
+
   try {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "payment", // One time payment,
-      line_items: cartItems.map((item) => {
-        return {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: item.service_name,
-            },
-            unit_amount: Math.round(item.unit_price * 0.0053 * 100.98285), // make sure price is in cents
-          },
-          quantity: 1,
-        };
-      }), // name of the item, price of the item..
-      success_url: "http://localhost:3001/customer-home",
-      cancel_url: "http://localhost:3001/customer/payment-failure",
+    const customer = await stripe.customers.create({
+      email: eventierUserEmail,
+      name: eventierUserEmail,
+      address: {
+        city: "lhr",
+        country: "pak",
+      },
     });
-    return session.url;
+
+    const card = await stripe.customers.createSource(customer.id, {
+      source: "tok_mastercard",
+    });
+
+    await stripe.charges.create({
+      amount: 10 * 100,
+      currency: "inr",
+      customer: customer.id,
+      description: "Hall",
+      shipping: {
+        name: token.card.name,
+        address: {
+          country: token.card.address_country,
+        },
+      },
+    });
+
+    return res.status(200).json({ message: "Payment processed!" });
   } catch (error) {
     console.log(error);
-    return false;
+    return res.status(500).json({ message: "Internal server error!" });
   }
 };
 
@@ -608,6 +624,7 @@ module.exports = {
   GetWishList,
   RemoveServiceFromWishList,
   PlaceOrder,
+  ProcessPayment,
   CustomerUpdateProfile: UpdateProfile,
   GetCustomerOrders,
   GetAllServicesForCustomers,

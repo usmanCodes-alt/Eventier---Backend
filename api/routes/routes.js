@@ -8,6 +8,7 @@ const {
   AddReview,
   GetReviewsOfServiceById,
   PlaceOrder,
+  ProcessPayment,
   AddToWishList,
   GetWishList,
   RemoveServiceFromWishList,
@@ -65,6 +66,7 @@ const {
   serviceProvidersOnly,
   adminOnly,
 } = require("../middleware/allowAccess");
+const uest = require("uest");
 
 // Multer setups imports
 const {
@@ -132,6 +134,7 @@ router.post(
   customersOnly,
   PlaceOrder
 );
+router.post("/customers/process-payment", ProcessPayment);
 router.get(
   "/rankings",
   authentication,
