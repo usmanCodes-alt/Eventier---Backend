@@ -16,6 +16,8 @@ const GetRankedServiceProviders = async (req, res) => {
       });
     }
 
+    console.log(sentiments);
+
     sentiments.sort(
       (sentimentObject1, sentimentObject2) =>
         sentimentObject1.polarity - sentimentObject2.polarity

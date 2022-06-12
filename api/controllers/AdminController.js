@@ -50,7 +50,7 @@ const AdminLogin = async (req, res) => {
       [email]
     );
     if (adminRows.length === 0) {
-      return res.status(412).json({ message: "Incorrect Email or Password" });
+      return res.status(401).json({ message: "Incorrect Email or Password" });
     }
     const savedPasswordHash = adminRows[0].admin_password;
     const correctPassword = bcrypt.compareSync(password, savedPasswordHash);
@@ -86,7 +86,10 @@ const GetCustomers = async (req, res) => {
 const GetServiceProviders = async (req, res) => {
   try {
     const [rows, _] = await connection.execute(
-      "SELECT * FROM service_provider"
+      `SELECT first_name, last_name, email, blocked
+      FROM service_provider
+      INNER JOIN login
+      ON service_provider.email = login.login_email`
     );
     return res.status(200).json({ rows });
   } catch (error) {

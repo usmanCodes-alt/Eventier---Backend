@@ -61,12 +61,12 @@ const {
   ValidateOTPAndResetPassword,
 } = require("../controllers/GenericController");
 const authentication = require("../middleware/authentication");
+const adminAuth = require("../middleware/admin-auth");
 const {
   customersOnly,
   serviceProvidersOnly,
   adminOnly,
 } = require("../middleware/allowAccess");
-const uest = require("uest");
 
 // Multer setups imports
 const {
@@ -90,22 +90,22 @@ router.post("/eventier/admin/create-admin", CreateAdmin);
 router.post("/eventier/admin/login-admin", AdminLogin);
 router.patch(
   "/eventier/admin/block-service/:serviceId",
-  authentication,
+  adminAuth,
   adminOnly,
   BlockService
 );
 router.patch(
   "/eventier/admin/unblock-service/:serviceId",
-  authentication,
+  adminAuth,
   adminOnly,
   UnBlockService
 );
-router.patch("/eventier/admin/block-account", authentication, BlockAccount);
-router.patch("/eventier/admin/unblock-account", authentication, UnBlockAccount);
-router.post("/eventier/admin/get-all-customers", authentication, GetCustomers);
-router.post(
+router.patch("/eventier/admin/block-account", adminAuth, BlockAccount);
+router.patch("/eventier/admin/unblock-account", adminAuth, UnBlockAccount);
+// router.post("/eventier/admin/get-all-customers", adminAuth, GetCustomers);
+router.get(
   "/eventier/admin/get-all-service-providers",
-  authentication,
+  adminAuth,
   GetServiceProviders
 );
 

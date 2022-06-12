@@ -5,7 +5,6 @@ const connection = require("../database/connection");
  * This authentication middleware will work for
  * 1) Customer
  * 2) Service Provider
- * 3) Admin
  * @param {*} req
  * @param {*} res
  * @param {*} next

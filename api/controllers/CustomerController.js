@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const validator = require("validator");
 const glob = require("glob");
 const path = require("path");
-const uuid = require("uuid");
+// const uuid = require("uuid");
 
 const GetAllCustomers = async (req, res) => {
   try {
