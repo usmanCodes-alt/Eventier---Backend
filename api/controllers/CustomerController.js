@@ -1,5 +1,6 @@
 const connection = require("../database/connection");
 const stripe = require("stripe")(process.env.STRIPE_PRIVATE_KEY);
+const sgMail = require("@sendgrid/mail");
 const bcrypt = require("bcrypt");
 const validator = require("validator");
 const glob = require("glob");
@@ -328,9 +329,28 @@ const PlaceOrder = async (req, res) => {
     );
     console.log(customerRows);
     const customerId = customerRows[0].customer_id;
-    const { street, city, country, province } = customerRows[0];
+    const {
+      street,
+      city,
+      country,
+      province,
+      phone_number: phoneNumber,
+      first_name: firstName,
+      last_name: lastName,
+    } = customerRows[0];
 
-    // const STRIPE_URL = await ProcessPaymentWithStripe(cartItems);
+    // adding up total discount
+    let discount = 0;
+    let totalPrice = 0;
+    for (const cartItem of cartItems) {
+      discount += cartItem.discount;
+      totalPrice += cartItem.unit_price;
+    }
+
+    let now = new Date();
+    let day = ("0" + now.getDate()).slice(-2);
+    let month = ("0" + (now.getMonth() + 1)).slice(-2);
+    let today = now.getFullYear() + "-" + month + "-" + day;
 
     for (const cartItem of cartItems) {
       const {
@@ -369,10 +389,6 @@ const PlaceOrder = async (req, res) => {
 
       // insert data into orders table
       const addressId = deliveryAddressRow.insertId;
-      let now = new Date();
-      let day = ("0" + now.getDate()).slice(-2);
-      let month = ("0" + (now.getMonth() + 1)).slice(-2);
-      let today = now.getFullYear() + "-" + month + "-" + day;
 
       await connection.execute(
         "INSERT INTO orders (customer_id, service_provider_id, service_id, order_name, order_date, delivery_date, quantity, extra_detail, payment_status, status, delivery_address_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -392,7 +408,48 @@ const PlaceOrder = async (req, res) => {
       );
     }
 
-    return res.status(201).json({ message: "User order has been created!" });
+    /**
+     * Send email to the user. Notifying them of order confirmation.
+     */
+    const mail = {
+      to: eventierUserEmail,
+      from: process.env.SENDGRID_SENDER,
+      subject: "Eventier -- Order Confirmation.",
+      templateId: "d-568e7f85b5414f6d926eeb1bdd861d30",
+      dynamic_template_data: {
+        currentDate: today,
+        discount,
+        subTotal: totalPrice,
+        totalAfterDiscount:
+          Number(totalPrice) - (Number(totalPrice) * Number(discount)) / 100,
+        customerEmail: eventierUserEmail,
+        phoneNumber,
+        customerFirstName: firstName,
+        customerLastName: lastName,
+        street,
+        city,
+        country,
+        province,
+        orders: cartItems.map((cartItem) => ({
+          productName: cartItem.service_name,
+          price: cartItem.unit_price,
+        })),
+        serviceProviders: cartItems.map(
+          (cartItem) => `${cartItem.first_name} ${cartItem.last_name}`
+        ),
+      },
+    };
+
+    sgMail
+      .send(mail)
+      .then(() =>
+        res.status(201).json({
+          message: "Order created and Confirmation mail has been sent.",
+        })
+      )
+      .catch((err) => {
+        throw new Error(err);
+      });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error" });

@@ -2,7 +2,6 @@ const connection = require("../database/connection");
 const { faker } = require("@faker-js/faker");
 const bcrypt = require("bcrypt");
 const sgMail = require("@sendgrid/mail");
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const GetEventierUserByEmail = async (req, res) => {
   const { eventierUserEmail } = req.params;
