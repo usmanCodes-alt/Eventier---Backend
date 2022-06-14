@@ -98,6 +98,20 @@ const GetServiceProviders = async (req, res) => {
   }
 };
 
+const GetServices = async (req, res) => {
+  try {
+    const [services] =
+      await connection.execute(`SELECT service_id, service_name, service_type, blocked, service_provider.email, service_provider.store_name FROM services
+      INNER JOIN service_provider
+      ON services.service_provider_id = service_provider.service_provider_id      
+    `);
+    return res.status(200).json({ services });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 const BlockService = async (req, res) => {
   const { serviceId } = req.params;
   if (!serviceId) {
@@ -194,4 +208,5 @@ module.exports = {
   UnBlockAccount,
   GetCustomers,
   GetServiceProviders,
+  GetServices,
 };

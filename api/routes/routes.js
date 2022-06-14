@@ -43,6 +43,7 @@ const {
   UnBlockAccount, // for customer as well as service provider
   GetCustomers,
   GetServiceProviders,
+  GetServices,
 } = require("../controllers/AdminController");
 const {
   AddServiceImage,
@@ -109,6 +110,7 @@ router.get(
   adminAuth,
   GetServiceProviders
 );
+router.get("/eventier/admin/get-all-services", adminAuth, GetServices);
 
 /**
  * Customer routes
