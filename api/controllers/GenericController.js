@@ -1,7 +1,59 @@
 const connection = require("../database/connection");
 const { faker } = require("@faker-js/faker");
+const glob = require("glob");
+const path = require("path");
 const bcrypt = require("bcrypt");
 const sgMail = require("@sendgrid/mail");
+
+const GetMostSoldProducts = async (req, res) => {
+  const SERVICES = [];
+
+  try {
+    const [mostOrderedServiceIds] = await connection.execute(`SELECT
+    service_id,
+    COUNT(service_id) AS 'value_occurrence' 
+    FROM eventier_db.orders
+    GROUP BY service_id
+    ORDER BY 'value_occurrence' DESC
+    LIMIT 4;
+  `);
+
+    for (const serviceIdCount of mostOrderedServiceIds) {
+      const { service_id } = serviceIdCount;
+
+      const [service] = await connection.execute(
+        `SELECT * FROM eventier_db.services
+        INNER JOIN eventier_db.service_provider
+        ON eventier_db.services.service_provider_id = eventier_db.service_provider.service_provider_id
+        WHERE eventier_db.services.service_id = ?`,
+        [service_id]
+      );
+
+      const { service_type, email, images_uuid } = service[0];
+      const emailPrefix = email.split("@")[0];
+
+      const matches = glob.sync(
+        emailPrefix + "--" + service_type + "--" + images_uuid + "--" + "*.*",
+        {
+          cwd: path.join(__dirname, "../../images/service-images/" + email),
+        }
+      );
+
+      if (matches.length > 0) {
+        service[0][
+          "static_url"
+        ] = `http://localhost:3000/static/${email}/${matches[0]}`;
+      }
+
+      SERVICES.push(service[0]);
+    }
+
+    return res.status(200).json({ services: SERVICES.reverse() });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error!" });
+  }
+};
 
 const GetEventierUserByEmail = async (req, res) => {
   const { eventierUserEmail } = req.params;
@@ -173,4 +225,5 @@ module.exports = {
   GetEventierUserByEmail,
   ResetPassword,
   ValidateOTPAndResetPassword,
+  GetMostSoldProducts,
 };

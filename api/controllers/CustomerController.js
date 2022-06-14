@@ -408,9 +408,6 @@ const PlaceOrder = async (req, res) => {
       );
     }
 
-    /**
-     * Send email to the user. Notifying them of order confirmation.
-     */
     const mail = {
       to: eventierUserEmail,
       from: process.env.SENDGRID_SENDER,
@@ -457,7 +454,6 @@ const PlaceOrder = async (req, res) => {
 };
 
 /**
- *
  * @param {*} req
  * @param {*} res
  * @returns Creates a customer, charges them and accept the payment!

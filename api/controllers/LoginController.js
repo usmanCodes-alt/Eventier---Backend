@@ -33,7 +33,7 @@ const GenericLogin = async (req, res) => {
     const blockedStatus = loginTableRow[0].blocked;
     if (blockedStatus === "1") {
       return res
-        .status(401)
+        .status(403)
         .json({ message: "Your account has been suspended temporarily" });
     }
     const eventierUser = loginTableRow[0];

@@ -59,6 +59,7 @@ const {
   GetEventierUserByEmail,
   ResetPassword,
   ValidateOTPAndResetPassword,
+  GetMostSoldProducts,
 } = require("../controllers/GenericController");
 const authentication = require("../middleware/authentication");
 const adminAuth = require("../middleware/admin-auth");
@@ -293,6 +294,7 @@ router.get("/orders/:orderId", authentication, GetOrderDetailsById);
 router.get("/get/:eventierUserEmail", GetEventierUserByEmail);
 router.get("/get-reviews/:serviceId", authentication, GetReviewsOfServiceById);
 router.get("/validate-jwt", ValidateJwtToken);
+router.get("/get-most-ordered", GetMostSoldProducts);
 
 router.all("*", (req, res) => {
   return res.status(404).json({ message: "Invalid or not supported URL" });
