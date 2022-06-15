@@ -3,12 +3,21 @@ const axios = require("axios");
 const schedule = require("node-schedule");
 
 const GetRankingsFromFlaskAPI = async (req, res) => {
-  console.log("RUNNING");
+  console.log("RUNNING SENTIMENT ANALYSIS");
   try {
-    await connection.execute("DELETE FROM sentiment");
+    // await connection.execute("DELETE FROM sentiment");
+    /**
+     * Get all tweets which's analysis_performed is 0
+     */
     const [reviews] = await connection.execute(
-      "SELECT review_message, service_provider_id FROM reviews"
+      "SELECT review_id, review_message, service_provider_id FROM reviews WHERE analysis_performed = ?",
+      [String(0)]
     );
+    if (reviews.length === 0) {
+      // no new reviews have been added to perform sentiment analysis
+      console.log("No new reviews added!");
+      return;
+    }
     const allReviews = [];
     reviews.forEach((review) => {
       allReviews.push({
@@ -37,12 +46,17 @@ const GetRankingsFromFlaskAPI = async (req, res) => {
             [polarity, subjectivity, service_provider_id]
           );
         }
-        // return res.status(200).json(flaskRes.data);
       })
       .catch((err) => console.log(err));
+    // update analysis_performed col to 1
+    for (const review of reviews) {
+      await connection.execute(
+        "UPDATE reviews SET analysis_performed = ? WHERE review_id = ?",
+        [String(1), review.review_id]
+      );
+    }
   } catch (error) {
     console.log(error);
-    // return res.status(500).json({ message: "Internal server error!" });
   }
 };
 
