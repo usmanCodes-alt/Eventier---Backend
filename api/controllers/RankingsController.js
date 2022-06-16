@@ -1,7 +1,6 @@
 const connection = require("../database/connection");
 
 const GetRankedServiceProviders = async (req, res) => {
-  console.log("Running!");
   try {
     const [sentiments] = await connection.execute(`
     SELECT service_provider.email, service_provider.first_name, service_provider.last_name, polarity, subjectivity
@@ -16,12 +15,14 @@ const GetRankedServiceProviders = async (req, res) => {
       });
     }
 
-    console.log(sentiments);
+    // console.log(sentiments);
 
     sentiments.sort(
       (sentimentObject1, sentimentObject2) =>
         sentimentObject1.polarity - sentimentObject2.polarity
     );
+
+    console.log(sentiments);
 
     let serviceProviderReviews = [];
 
@@ -51,6 +52,7 @@ const GetRankedServiceProviders = async (req, res) => {
         }
       }
     }
+    console.log(serviceProviderReviews);
     return res.status(200).json({
       sentiments,
       individualServiceProviderReviewsInformation: serviceProviderReviews,

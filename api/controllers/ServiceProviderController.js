@@ -288,14 +288,14 @@ const GetOrderDetailsById = async (req, res) => {
 
   try {
     const [orderDetailRow] = await connection.execute(
-      `
-    SELECT order_name, payment_status, status AS order_status, customers.first_name AS customer_fname, customers.last_name AS customer_lname, customers.email AS customer_email,
-    service_provider.first_name AS service_provider_fname, service_provider.last_name AS service_provider_lname, service_provider.email AS service_provider_email, service_provider.phone_number AS service_provider_phone
-    FROM orders
-    INNER JOIN customers ON customers.customer_id = orders.customer_id
-    INNER JOIN service_provider ON service_provider.service_provider_id = orders.service_provider_id
-    WHERE order_id = ?;
-    `,
+      `SELECT order_name, payment_status, status AS order_status, customers.first_name AS customer_fname, customers.last_name AS customer_lname, customers.email AS customer_email, customers.phone_number AS customer_phone,
+      service_provider.first_name AS service_provider_fname, service_provider.last_name AS service_provider_lname, service_provider.email AS service_provider_email, service_provider.phone_number AS service_provider_phone,
+      address.street, address.city, address.country, address.province
+      FROM orders
+      INNER JOIN customers ON customers.customer_id = orders.customer_id
+      INNER JOIN service_provider ON service_provider.service_provider_id = orders.service_provider_id
+      INNER JOIN address ON address.address_id = customers.address_id
+      WHERE order_id = ?;`,
       [orderId]
     );
 
