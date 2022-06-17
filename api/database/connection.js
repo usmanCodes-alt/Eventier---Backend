@@ -1,24 +1,10 @@
 const mysql = require("mysql2");
 
-// module.exports = mysql
-//   .createConnection({
-//     host: "localhost",
-//     user: "root",
-//     password: "admin",
-//     database: "eventier_db",
-//   })
-//   .then(() => {
-//     console.log("Connected to database!");
-//   })
-//   .catch((err) => {
-//     console.log(err);
-//   });
-
 const pool = mysql.createPool({
-  host: "localhost",
-  user: "root",
-  password: "admin",
-  database: "eventier_db",
+  host: process.env.DATABASE_HOST,
+  user: process.env.DATABASE_USERNAME,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME,
 });
 
 module.exports = pool.promise();
