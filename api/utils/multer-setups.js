@@ -123,7 +123,8 @@ const userProfilePictureFileStorageEngine = multer.diskStorage({
       fs.mkdirSync(
         path.join(
           __dirname,
-          "../../images/profile-pictures/" + req.body.eventierUserEmail
+          // "../../images/profile-pictures/" + req.body.eventierUserEmail
+          "../../../images/profile-pictures/" + req.body.eventierUserEmail
         )
       );
     }
