@@ -12,7 +12,7 @@ const GetMostSoldProducts = async (req, res) => {
     const [mostOrderedServiceIds] = await connection.execute(`SELECT
     service_id,
     COUNT(service_id) AS 'value_occurrence' 
-    FROM eventier_db.orders
+    FROM orders
     GROUP BY service_id
     ORDER BY 'value_occurrence' DESC
     LIMIT 4;
