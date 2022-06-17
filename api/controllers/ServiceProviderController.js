@@ -417,7 +417,7 @@ const GetAllServices = async (req, res) => {
         console.log("adding dynamic property to object");
         servicesRows[currentService][
           "static_url"
-        ] = `http://localhost:3000/static/${eventierUserEmail}/${matches[0]}`;
+        ] = `https://eventier-node-api.herokuapp.com/static/${eventierUserEmail}/${matches[0]}`;
       }
       currentService++;
     }
