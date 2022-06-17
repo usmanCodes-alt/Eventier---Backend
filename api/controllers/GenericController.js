@@ -22,10 +22,10 @@ const GetMostSoldProducts = async (req, res) => {
       const { service_id } = serviceIdCount;
 
       const [service] = await connection.execute(
-        `SELECT * FROM eventier_db.services
-        INNER JOIN eventier_db.service_provider
-        ON eventier_db.services.service_provider_id = eventier_db.service_provider.service_provider_id
-        WHERE eventier_db.services.service_id = ?`,
+        `SELECT * FROM services
+        INNER JOIN service_provider
+        ON services.service_provider_id = service_provider.service_provider_id
+        WHERE services.service_id = ?`,
         [service_id]
       );
 
