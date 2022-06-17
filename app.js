@@ -11,8 +11,6 @@ const app = express();
 const port = process.env.PORT || 3000;
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-console.log(__dirname);
-
 app.use(
   "/static",
   express.static(path.join(__dirname, "images/service-images"))
@@ -23,8 +21,7 @@ app.use(
 );
 
 app.use(morgan("tiny"));
-app.use(cors({ origin: "http://localhost:3001" }));
-// app.options("*", cors());
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -114,8 +114,7 @@ const userProfilePictureFileStorageEngine = multer.diskStorage({
       !fs.existsSync(
         path.join(
           __dirname,
-          // "../../images/profile-pictures/" + req.body.eventierUserEmail
-          "../../../images/profile-pictures/" + req.body.eventierUserEmail
+          "../../images/profile-pictures/" + req.body.eventierUserEmail
         )
       )
     ) {
@@ -123,8 +122,7 @@ const userProfilePictureFileStorageEngine = multer.diskStorage({
       fs.mkdirSync(
         path.join(
           __dirname,
-          // "../../images/profile-pictures/" + req.body.eventierUserEmail
-          "../../../images/profile-pictures/" + req.body.eventierUserEmail
+          "../../images/profile-pictures/" + req.body.eventierUserEmail
         )
       );
     }
@@ -132,8 +130,7 @@ const userProfilePictureFileStorageEngine = multer.diskStorage({
       null,
       path.join(
         __dirname,
-        // "../../images/profile-pictures/" + req.body.eventierUserEmail
-        "../../../images/profile-pictures/" + req.body.eventierUserEmail
+        "../../images/profile-pictures/" + req.body.eventierUserEmail
       )
     );
   },
@@ -146,8 +143,7 @@ const userProfilePictureFileStorageEngine = multer.diskStorage({
     const matches = glob.sync(eventierUserEmail + "*.*", {
       cwd: path.join(
         __dirname,
-        // "../../images/profile-pictures/" + req.body.eventierUserEmail
-        "../../../images/profile-pictures/" + req.body.eventierUserEmail
+        "../../images/profile-pictures/" + req.body.eventierUserEmail
       ),
     });
 
@@ -155,8 +151,7 @@ const userProfilePictureFileStorageEngine = multer.diskStorage({
       // there exists a profile picture, delete it.
       const directory = path.join(
         __dirname,
-        // "../../images/profile-pictures/" + req.body.eventierUserEmail
-        "../../../images/profile-pictures/" + req.body.eventierUserEmail
+        "../../images/profile-pictures/" + req.body.eventierUserEmail
       );
       fs.readdirSync(directory).forEach((file) =>
         fs.rmSync(`${directory}/${file}`)
