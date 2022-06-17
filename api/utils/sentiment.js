@@ -31,7 +31,10 @@ const GetRankingsFromFlaskAPI = async (req, res) => {
     };
 
     axios
-      .post("http://127.0.0.1:5000/get-sentiments", flaskReviewsObject)
+      .post(
+        `${process.env.FLASK_MICROSERVICE_AZURE_URL}/get-sentiments`,
+        flaskReviewsObject
+      )
       .then(async (flaskRes) => {
         for (const sentimentNumber in flaskRes.data) {
           const {
