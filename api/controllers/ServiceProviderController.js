@@ -468,7 +468,8 @@ const GetServiceDetailsById = async (req, res) => {
 
     if (matches.length > 0) {
       matches = matches.map(
-        (match) => `http://localhost:3000/static/${email}/${match}`
+        (match) =>
+          `https://eventier-node-api.herokuapp.com/static/${email}/${match}`
       );
       serviceDetailRow[0]["static_urls"] = matches;
     }
