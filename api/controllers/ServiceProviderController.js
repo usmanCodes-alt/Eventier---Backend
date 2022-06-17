@@ -459,12 +459,16 @@ const GetServiceDetailsById = async (req, res) => {
     const { email } = serviceDetailRow[0];
     const emailPrefix = email.split("@")[0];
 
+    console.log(path.join(__dirname, "../../images/service-images/" + email));
+
     let matches = glob.sync(
       emailPrefix + "--" + service_type + "--" + images_uuid + "--" + "*.*",
       {
         cwd: path.join(__dirname, "../../images/service-images/" + email),
       }
     );
+
+    console.log(matches);
 
     if (matches.length > 0) {
       matches = matches.map(
@@ -473,6 +477,8 @@ const GetServiceDetailsById = async (req, res) => {
       );
       serviceDetailRow[0]["static_urls"] = matches;
     }
+
+    console.log(serviceDetailRow[0]);
 
     /**
      * if the user is customers, check if they have previously placed an order for this service
