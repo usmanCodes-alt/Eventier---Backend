@@ -459,14 +459,16 @@ const GetServiceDetailsById = async (req, res) => {
     const { email } = serviceDetailRow[0];
     const emailPrefix = email.split("@")[0];
 
-    console.log(__dirname);
-    console.log(path.join("../../images/service-images"));
+    console.log("Dirname" + __dirname);
+
+    console.log(
+      path.join(__dirname, "../../../images/service-images/" + email)
+    );
 
     let matches = glob.sync(
       emailPrefix + "--" + service_type + "--" + images_uuid + "--" + "*.*",
       {
-        // cwd: path.join(__dirname, "../../images/service-images/" + email),
-        cwd: "../../images/service-images/" + email,
+        cwd: path.join(__dirname, "../../../images/service-images/" + email),
       }
     );
 
