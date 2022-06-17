@@ -11,6 +11,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+console.log(__dirname);
+
 app.use(
   "/static",
   express.static(path.join(__dirname, "images/service-images"))
