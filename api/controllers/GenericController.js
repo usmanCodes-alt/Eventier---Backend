@@ -42,7 +42,7 @@ const GetMostSoldProducts = async (req, res) => {
       if (matches.length > 0) {
         service[0][
           "static_url"
-        ] = `http://localhost:3000/static/${email}/${matches[0]}`;
+        ] = `https://eventier-node-api.herokuapp.com/static/${email}/${matches[0]}`;
       }
 
       SERVICES.push(service[0]);
