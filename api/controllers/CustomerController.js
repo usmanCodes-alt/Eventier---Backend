@@ -629,6 +629,8 @@ const GetAllServicesForCustomers = async (req, res) => {
         }
       );
 
+      console.log(matches);
+
       if (matches.length > 0) {
         services[currentService][
           "static_url"
