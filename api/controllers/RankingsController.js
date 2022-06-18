@@ -8,6 +8,8 @@ const GetRankedServiceProviders = async (req, res) => {
     INNER JOIN service_provider
     ON sentiment.service_provider_id = service_provider.service_provider_id`);
 
+    console.log(sentiments);
+
     if (sentiments.length === 0) {
       return res.status(404).json({
         message:

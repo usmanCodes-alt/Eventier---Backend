@@ -68,7 +68,7 @@ const GetEventierUserByEmail = async (req, res) => {
       "SELECT * FROM login WHERE login_email = ?",
       [eventierUserEmail]
     );
-
+    console.log(eventierUserRow);
     const user = eventierUserRow[0];
     if (!user.service_provider_id) {
       // user is the customer
