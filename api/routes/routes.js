@@ -140,8 +140,11 @@ router.post(
 router.post("/customers/process-payment", ProcessPayment);
 router.get(
   "/rankings",
+  () => console.log("HIT1"),
   authentication,
+  () => console.log("HIT2"),
   customersOnly,
+  () => console.log("HIT3"),
   GetRankedServiceProviders
 );
 router.post(

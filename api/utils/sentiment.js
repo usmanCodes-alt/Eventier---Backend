@@ -64,6 +64,6 @@ const GetRankingsFromFlaskAPI = async (req, res) => {
 };
 
 const recurrenceRule = new schedule.RecurrenceRule();
-recurrenceRule.hour = 24;
-// recurrenceRule.second = 10;
+// recurrenceRule.hour = 24;
+recurrenceRule.second = 60;
 schedule.scheduleJob(recurrenceRule, GetRankingsFromFlaskAPI);
