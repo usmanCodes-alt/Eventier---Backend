@@ -17,13 +17,6 @@ const GetRankedServiceProviders = async (req, res) => {
       });
     }
 
-    // console.log(sentiments);
-
-    sentiments.sort(
-      (sentimentObject1, sentimentObject2) =>
-        sentimentObject1.polarity - sentimentObject2.polarity
-    );
-
     console.log(sentiments);
 
     let serviceProviderReviews = [];
@@ -55,6 +48,11 @@ const GetRankedServiceProviders = async (req, res) => {
       }
     }
     console.log(serviceProviderReviews);
+    serviceProviderReviews.sort(
+      (r1, r2) =>
+        parseInt(r2.numberOfPositiveReviews) -
+        parseInt(r1.numberOfPositiveReviews)
+    );
     return res.status(200).json({
       sentiments,
       individualServiceProviderReviewsInformation: serviceProviderReviews,

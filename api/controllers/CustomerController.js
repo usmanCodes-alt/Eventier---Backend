@@ -615,9 +615,13 @@ const GetCustomerOrders = async (req, res) => {
 const GetAllServicesForCustomers = async (req, res) => {
   let currentService = 0;
   try {
-    const [services] =
-      await connection.execute(`SELECT service_id as 'service_database_id', service_name, service_type, email, images_uuid FROM services
-    INNER JOIN service_provider ON services.service_provider_id = service_provider.service_provider_id;`);
+    const [services] = await connection.execute(
+      `SELECT service_id as 'service_database_id', service_name, service_type, email, images_uuid, unit_price FROM services
+      INNER JOIN service_provider ON services.service_provider_id = service_provider.service_provider_id
+      WHERE blocked = ?
+      ORDER BY positive_reviews DESC;`,
+      [String(0)]
+    );
     for (const service of services) {
       const { service_type, email, images_uuid } = service;
       const emailPrefix = email.split("@")[0];
@@ -642,8 +646,6 @@ const GetAllServicesForCustomers = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-// const GetRatingsAndReviews = async (req, res) => {};
 
 const Logout = async (req, res) => {
   const { eventierUserEmail } = req.body;

@@ -8,7 +8,7 @@ const router = require("./api/routes/routes");
 require("./api/utils/sentiment");
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 app.use(

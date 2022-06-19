@@ -58,7 +58,7 @@ const GenericLogin = async (req, res) => {
       { eventierUserEmail: email, userRoles: roles },
       process.env.TOKEN_SECRET,
       {
-        expiresIn: "1h", // expire in 1 hour
+        expiresIn: "3h", // expire in 1 hour
       }
     );
 
